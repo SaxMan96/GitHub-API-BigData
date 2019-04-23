@@ -3,8 +3,11 @@
 FRAGMENTS =  """
 fragment RepositoryFragment on Repository {
     id
-    description
 	name
+    description
+	codeOfConduct {
+	  id
+	}
 }
 fragment LanguageFragment on Language{
 	id
@@ -16,6 +19,8 @@ fragment UserFragmentShort on User {
 }
 fragment UserFragmentExtended on User {
 	id
+	name
+	login
 	bio
 	company
 	createdAt
@@ -27,8 +32,6 @@ fragment UserFragmentExtended on User {
     isSiteAdmin
     isViewer
 	location
-    login
-    name
 	updatedAt
     url
     viewerCanCreateProjects
@@ -39,7 +42,8 @@ fragment UserFragmentExtended on User {
 REPOSITORY_DESCRIPTION = """
 query {
     resource(url: "https://github.com/mini-pw/WizualizacjaDanych2018") {
-  	... RepositoryFragment
+		... RepositoryFragment
+	}
 }	
 """
 
@@ -86,10 +90,26 @@ query {
 
 REPOSITORY_ASIGNABLE_USERS = """
 query {
-    $selector {
-		... on Repository {
-			id
+    resource(url: "https://github.com/SaxMan96/VanillaDeepNet") {
+  		... on Repository {
 			assignableUsers(first: 100, after: null) {
+				nodes {
+					... UserFragmentExtended
+				}
+				 pageInfo {
+					endCursor
+					hasNextPage
+				}
+			}
+		}
+	}
+}
+"""
+REPOSITORY_COLABORATORS = """
+query {
+    resource(url: "https://github.com/SaxMan96/VanillaDeepNet") {
+  		... on Repository {
+			collaborators(first: 100, after: null) {
 				nodes {
 					... UserFragmentExtended
 				}
