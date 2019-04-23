@@ -1,69 +1,75 @@
 """All github queries."""
 
-
-REPOSITORY_DESCRIPTION = """
-    ... on Repository {
-        id
-        description
-    }
+FRAGMENTS =  """
+fragment RepositoryFragment on Repository {
+    id
+    description
+	name
+}
 """
-
-REPOSITORY_NAME = """
-    ... on Repository {
-        id
-        name
-    }
+REPOSITORY_DESCRIPTION = """
+query {
+    resource(url: "https://github.com/mini-pw/WizualizacjaDanych2018") {
+  	... RepositoryFragment
+}	
 """
 
 REPOSITORY_FORKS = """
-    ... on Repository {{
-        id
-        forks(first: 100, after: {after}) {{
-            nodes {{
-                ... on Repository {{
-                    id
-                    description
-                }}
-            }}
-            pageInfo {{
-                endCursor
-                hasNextPage
-            }}
-        }}
-    }}
+query {
+    resource(url: "https://github.com/mini-pw/WizualizacjaDanych2018") {
+  		... on Repository {
+			forks(first: 100, after: null) {
+				nodes {
+					... RepositoryFragment
+				}
+				pageInfo {
+					endCursor
+					hasNextPage
+				}
+			}
+		}
+	}
+}		
 """
 
 REPOSITORY_LANGUAGES = """
-    ... on Repository {{
-        id
-		languages(first:100, after: {after}) {{
-            totalCount
-			nodes {{
-				id
-				name
-			}}
-			 pageInfo {{
-                endCursor
-                hasNextPage
-            }}
-        }}
-    }}
+query {
+    resource(url: "https://github.com/mini-pw/WizualizacjaDanych2018") {
+  		... on Repository {
+			languages(first:100, after: null) {
+				totalCount
+				nodes {
+					id
+					name
+				}
+				 pageInfo {
+					endCursor
+					hasNextPage
+				}
+			}
+		}
+	}
+}
 """
 
 REPOSITORY_ASIGNABLE_USERS = """
-    ... on Repository {{
-        id
-		assignableUsers(first: 100, after: null) {
-			nodes {{
-				... on User {{
-						id
-						name
-				}}
-			}}
-			 pageInfo {{
-                endCursor
-                hasNextPage
-            }}
-        }}
-    }}
+query {
+    $selector {
+		... on Repository {
+			id
+			assignableUsers(first: 100, after: {after}) {
+				nodes {
+					... on User {
+							id
+							name
+					}
+				}
+				 pageInfo {
+					endCursor
+					hasNextPage
+				}
+			}
+		}
+	}
+}
 """
