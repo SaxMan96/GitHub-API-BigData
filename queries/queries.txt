@@ -1,6 +1,6 @@
 """All github queries."""
 
-FRAGMENTS =  """
+REPOSITORY_FRAGMENT =  """
 fragment RepositoryFragment on Repository {
     id
 	name
@@ -30,12 +30,14 @@ fragment RepositoryFragment on Repository {
         }
   }
 }
-
+"""
+LANGUAGE_FRAGMENT =  """
 fragment LanguageFragment on Language{
 	id
 	name
 }
-
+"""
+USER_FRAGMENT =  """
 fragment UserFragment on User {
 	id
 	name
@@ -61,6 +63,8 @@ fragment UserFragment on User {
     viewerCanFollow
     viewerIsFollowing
 }
+"""
+COMMIT_COMMENT_FRAGMENT =  """
 fragment CommitCommentFragment on CommitComment {
     id  
   	authorAssociation
@@ -68,7 +72,8 @@ fragment CommitCommentFragment on CommitComment {
   	createdAt
   	url
 }
-
+"""
+RELEASE_FRAGMENT =  """
 fragment ReleaseFragment on Release {
 	author{
 		login
@@ -84,6 +89,8 @@ fragment ReleaseFragment on Release {
 	url
 	updatedAt
 }
+"""
+ISSUES_FRAGMENT =  """
 fragment IssuesFragment on Issue {
 	author{
 		login
@@ -101,7 +108,8 @@ fragment IssuesFragment on Issue {
 	updatedAt
 	url
 }
-
+"""
+MILESTONES_FRAGMENT =  """
 fragment MilestonesFragment on Milestone {
 	description
   dueOn
@@ -114,7 +122,8 @@ fragment MilestonesFragment on Milestone {
   updatedAt
   url
 }
-
+"""
+PULL_REQUEST_FRAGMENT =  """
 fragment PullRequestFragment on PullRequest {
 	additions
 	author{
@@ -138,30 +147,8 @@ fragment PullRequestFragment on PullRequest {
 	updatedAt
 	url
 }
-
-fragment PullRequestFragment on PullRequest {
-	author{
-		login
-	}
-	bodyText
-	changedFiles
-	mergeable
-	mergedAt
-	merged
-	milestone{
-		id
-	}
-	permalink
-	closed
-	closedAt
-	id
-	number
-	state
-	title
-	updatedAt
-	url
-}
 """
+
 REPOSITORY_DESCRIPTION = """
 query {
     $selector {
