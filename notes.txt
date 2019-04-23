@@ -1,0 +1,16 @@
+download:
+    https://github.com/JanusGraph/janusgraph/releases
+
+start:
+    TLDR:
+        $ ./bin/janusgraph.sh start
+        pip install gremlinpython~=3.2.11
+    OR:
+        $ ./bin/janusgraph.sh start
+        pip install -r ./requrements.txt
+
+    GUIDE:
+        https://medium.com/@BGuigal/janusgraph-python-9e8d6988c36c
+
+gremlinpython + janusgraph versions MUST be compatible:
+    https://docs.janusgraph.org/latest/version-compat.html
