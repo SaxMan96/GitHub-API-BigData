@@ -5,19 +5,38 @@ fragment RepositoryFragment on Repository {
     id
 	name
     description
-	codeOfConduct {
-	  id
-	}
+    codeOfConduct {
+      	id
+    }
+    createdAt
+	diskUsage
+  	forkCount
+  	isArchived
+  	isDisabled
+    isFork
+    isLocked
+    isMirror
+    isPrivate
+    url
+    licenseInfo{
+        id
+        body
+        description
+        featured
+        nickname
+        permissions{
+            description
+            label
+        }
+  }
 }
+
 fragment LanguageFragment on Language{
 	id
 	name
 }
-fragment UserFragmentShort on User {
-	id
-	name
-}
-fragment UserFragmentExtended on User {
+
+fragment UserFragment on User {
 	id
 	name
 	login
@@ -37,6 +56,29 @@ fragment UserFragmentExtended on User {
     viewerCanCreateProjects
     viewerCanFollow
     viewerIsFollowing
+}
+fragment CommitCommentFragment on CommitComment {
+    id  
+  	authorAssociation
+		bodyText
+  	createdAt
+  	url
+}
+
+fragment ReleaseFragment on Release {
+	author{
+    id
+  }
+  createdAt
+  description
+  id
+  isDraft
+  isPrerelease
+  name
+  publishedAt
+  tag
+  url
+  updatedAt
 }
 """
 REPOSITORY_DESCRIPTION = """
@@ -94,7 +136,7 @@ query {
   		... on Repository {
 			assignableUsers(first: 100, after: null) {
 				nodes {
-					... UserFragmentExtended
+					... UserFragment
 				}
 				 pageInfo {
 					endCursor
@@ -111,7 +153,64 @@ query {
   		... on Repository {
 			collaborators(first: 100, after: null) {
 				nodes {
-					... UserFragmentExtended
+					... UserFragment
+				}
+				 pageInfo {
+					endCursor
+					hasNextPage
+				}
+			}
+		}
+	}
+}
+"""
+
+REPOSITORY_COMMIT_COMMENTS = """
+query {
+    resource(url: "https://github.com/tensorflow/tensorflow") {
+   		... on Repository {
+			commitComments(first: 100, after: null) {
+				totalCount
+				nodes {
+					... CommitCommentFragment
+				}
+				 pageInfo {
+					endCursor
+					hasNextPage
+				}
+			}
+		}
+	}
+}
+"""
+
+REPOSITORY_STARGAZERS = """
+query {
+    resource(url: "https://github.com/tensorflow/tensorflow") {
+   		... on Repository {
+			stargazers(first: 100, after: null) {
+				totalCount
+				nodes {
+					... UserFragment
+				}
+				 pageInfo {
+					endCursor
+					hasNextPage
+				}
+			}
+		}
+	}
+}
+"""
+
+REPOSITORY_RELEASES = """
+query {
+    resource(url: "https://github.com/tensorflow/tensorflow") {
+   		... on Repository {
+			releases(first: 100, after: null) {
+				totalCount
+				nodes {
+					... ReleaseFragment
 				}
 				 pageInfo {
 					endCursor
