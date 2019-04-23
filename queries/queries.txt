@@ -51,6 +51,10 @@ fragment UserFragment on User {
     isSiteAdmin
     isViewer
 	location
+    status {
+      id,
+      message
+    }
 	updatedAt
     url
     viewerCanCreateProjects
@@ -160,7 +164,7 @@ fragment PullRequestFragment on PullRequest {
 """
 REPOSITORY_DESCRIPTION = """
 query {
-    resource(url: "https://github.com/mini-pw/WizualizacjaDanych2018") {
+    $selector {
 		... RepositoryFragment
 	}
 }	
@@ -168,9 +172,9 @@ query {
 
 REPOSITORY_FORKS = """
 query {
-    resource(url: "https://github.com/mini-pw/WizualizacjaDanych2018") {
+    $selector {
   		... on Repository {
-			forks(first: 100, after: null) {
+			forks(first: 100, after: $cursor) {
 				nodes {
 					... RepositoryFragment
 				}
@@ -186,9 +190,9 @@ query {
 
 REPOSITORY_LANGUAGES = """
 query {
-    resource(url: "https://github.com/SaxMan96/VanillaDeepNet") {
+    $selector {
   		... on Repository {
-			languages(first:100, after: null) {
+			languages(first:100, after: $cursor) {
 				totalSize
 				totalCount
 				edges {
@@ -209,13 +213,13 @@ query {
 
 REPOSITORY_ASIGNABLE_USERS = """
 query {
-    resource(url: "https://github.com/SaxMan96/VanillaDeepNet") {
+    $selector {
   		... on Repository {
-			assignableUsers(first: 100, after: null) {
+			assignableUsers(first: 100, after: $cursor) {
 				nodes {
 					... UserFragment
 				}
-				 pageInfo {
+				pageInfo {
 					endCursor
 					hasNextPage
 				}
@@ -226,13 +230,13 @@ query {
 """
 REPOSITORY_COLABORATORS = """
 query {
-    resource(url: "https://github.com/SaxMan96/VanillaDeepNet") {
+    $selector {
   		... on Repository {
-			collaborators(first: 100, after: null) {
+			collaborators(first: 100, after: $cursor) {
 				nodes {
 					... UserFragment
 				}
-				 pageInfo {
+				pageInfo {
 					endCursor
 					hasNextPage
 				}
@@ -244,14 +248,14 @@ query {
 
 REPOSITORY_COMMIT_COMMENTS = """
 query {
-    resource(url: "https://github.com/tensorflow/tensorflow") {
+    $selector {
    		... on Repository {
-			commitComments(first: 100, after: null) {
+			commitComments(first: 100, after: $cursor) {
 				totalCount
 				nodes {
 					... CommitCommentFragment
 				}
-				 pageInfo {
+				pageInfo {
 					endCursor
 					hasNextPage
 				}
@@ -263,14 +267,14 @@ query {
 
 REPOSITORY_STARGAZERS = """
 query {
-    resource(url: "https://github.com/tensorflow/tensorflow") {
+    $selector {
    		... on Repository {
-			stargazers(first: 100, after: null) {
+			stargazers(first: 100, after: $cursor) {
 				totalCount
 				nodes {
 					... UserFragment
 				}
-				 pageInfo {
+				pageInfo {
 					endCursor
 					hasNextPage
 				}
@@ -282,14 +286,14 @@ query {
 
 REPOSITORY_RELEASES = """
 query {
-    resource(url: "https://github.com/tensorflow/tensorflow") {
+    $selector {
    		... on Repository {
-			releases(first: 100, after: null) {
+			releases(first: 100, after: $cursor) {
 				totalCount
 				nodes {
 					... ReleaseFragment
 				}
-				 pageInfo {
+				pageInfo {
 					endCursor
 					hasNextPage
 				}
@@ -301,14 +305,14 @@ query {
 
 REPOSITORY_ISSUES = """
 query {
-    resource(url: "https://github.com/tensorflow/tensorflow") {
+    $selector {
    		... on Repository {
-			issues(first: 100, after: null) {
+			issues(first: 100, after: $cursor) {
 				totalCount
 				nodes {
 					... IssuesFragment
 				}
-				 pageInfo {
+				pageInfo {
 					endCursor
 					hasNextPage
 				}
@@ -320,14 +324,14 @@ query {
 
 REPOSITORY_MILESTONES = """
 query {
-    resource(url: "https://github.com/tensorflow/tensorflow") {
+    $selector {
    		... on Repository {
-			milestones(first: 100, after: null) {
+			milestones(first: 100, after: $cursor) {
 				totalCount
 				nodes {
 					... MilestonesFragment
 				}
-				 pageInfo {
+				pageInfo {
 					endCursor
 					hasNextPage
 				}
@@ -339,14 +343,166 @@ query {
 
 REPOSITORY_PULL_REQUESTS = """
 query {
-    resource(url: "https://github.com/tensorflow/tensorflow") {
-   		... on Repository {
-			pullRequests(first: 16, after: null) {
+    $selector {
+        ... on Repository {
+			pullRequests(first: 16, after: $cursor) {
 				totalCount
 				nodes {
 					... PullRequestFragment
 				}
-				 pageInfo {
+				pageInfo {
+					endCursor
+					hasNextPage
+				}
+			}
+		}
+	}
+}
+"""
+
+USER_COMMIT_COMMENTS = """
+query {
+    $selector {
+   		... on User {
+			commitComments(first: 100, after: $cursor) {
+				totalCount
+				nodes {
+					... CommitCommentFragment
+				}
+				pageInfo {
+					endCursor
+					hasNextPage
+				}
+			}
+		}
+	}
+}
+"""
+
+USER_FOLLOWERS = """
+query {
+    $selector {
+   		... on User {
+			followers(first: 100, after: $cursor) {
+				totalCount
+				nodes {
+					... UserFragment
+				}
+				pageInfo {
+					endCursor
+					hasNextPage
+				}
+			}
+		}
+	}
+}
+"""
+
+USER_FOLLOWING = """
+query {
+    $selector {
+   		... on User {
+			following(first: 100, after: $cursor) {
+				totalCount
+				nodes {
+					... UserFragment
+				}
+				pageInfo {
+					endCursor
+					hasNextPage
+				}
+			}
+		}
+	}
+}
+"""
+
+USER_ISSUES = """
+query {
+    $selector {
+   		... on User {
+			issues(first: 100, after: $cursor) {
+				totalCount
+				nodes {
+					... IssueFragment
+				}
+				pageInfo {
+					endCursor
+					hasNextPage
+				}
+			}
+		}
+	}
+}
+"""
+
+USER_PULL_REQUESTS = """
+query {
+    $selector {
+   		... on User {
+			pullRequests(first: 100, after: $cursor) {
+				totalCount
+				nodes {
+					... PullRequestFragment
+				}
+				pageInfo {
+					endCursor
+					hasNextPage
+				}
+			}
+		}
+	}
+}
+"""
+
+USER_REPOSITORIES = """
+query {
+    $selector {
+   		... on User {
+			repositories(first: 100, after: $cursor) {
+				totalCount
+				nodes {
+					... RepositoryFragment
+				}
+				pageInfo {
+					endCursor
+					hasNextPage
+				}
+			}
+		}
+	}
+}
+"""
+
+USER_REPOSITORIES_CONTRIBUTED_TO = """
+query {
+    $selector {
+   		... on User {
+			repositoriesContributedTo(first: 100, after: $cursor) {
+				totalCount
+				nodes {
+					... RepositoryFragment
+				}
+				pageInfo {
+					endCursor
+					hasNextPage
+				}
+			}
+		}
+	}
+}
+"""
+
+USER_WATCHING = """
+query {
+    $selector {
+   		... on User {
+			watching(first: 100, after: $cursor) {
+				totalCount
+				nodes {
+					... RepositoryFragment
+				}
+				pageInfo {
 					endCursor
 					hasNextPage
 				}
