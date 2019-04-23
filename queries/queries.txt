@@ -10,9 +10,30 @@ fragment LanguageFragment on Language{
 	id
 	name
 }
-fragment UserFragment on User {
+fragment UserFragmentShort on User {
 	id
 	name
+}
+fragment UserFragmentExtended on User {
+	id
+	bio
+	company
+	createdAt
+	isBountyHunter
+    isCampusExpert
+    isDeveloperProgramMember
+    isEmployee
+    isHireable
+    isSiteAdmin
+    isViewer
+	location
+    login
+    name
+	updatedAt
+    url
+    viewerCanCreateProjects
+    viewerCanFollow
+    viewerIsFollowing
 }
 """
 REPOSITORY_DESCRIPTION = """
@@ -45,15 +66,15 @@ query {
     resource(url: "https://github.com/SaxMan96/VanillaDeepNet") {
   		... on Repository {
 			languages(first:100, after: null) {
-        totalSize
+				totalSize
 				totalCount
 				edges {
-          	size
-          	node {
-          		... LanguageFragment
-            }
+					size
+					node {
+						... LanguageFragment
+					}
 				}
-				 pageInfo {
+				pageInfo {
 					endCursor
 					hasNextPage
 				}
@@ -68,9 +89,9 @@ query {
     $selector {
 		... on Repository {
 			id
-			assignableUsers(first: 100, after: {after}) {
+			assignableUsers(first: 100, after: null) {
 				nodes {
-					... UserFragment
+					... UserFragmentExtended
 				}
 				 pageInfo {
 					endCursor
