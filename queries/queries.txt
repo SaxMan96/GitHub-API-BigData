@@ -6,6 +6,14 @@ fragment RepositoryFragment on Repository {
     description
 	name
 }
+fragment LanguageFragment on Language{
+	id
+	name
+}
+fragment UserFragment on User {
+	id
+	name
+}
 """
 REPOSITORY_DESCRIPTION = """
 query {
@@ -34,13 +42,16 @@ query {
 
 REPOSITORY_LANGUAGES = """
 query {
-    resource(url: "https://github.com/mini-pw/WizualizacjaDanych2018") {
+    resource(url: "https://github.com/SaxMan96/VanillaDeepNet") {
   		... on Repository {
 			languages(first:100, after: null) {
+        totalSize
 				totalCount
-				nodes {
-					id
-					name
+				edges {
+          	size
+          	node {
+          		... LanguageFragment
+            }
 				}
 				 pageInfo {
 					endCursor
@@ -59,10 +70,7 @@ query {
 			id
 			assignableUsers(first: 100, after: {after}) {
 				nodes {
-					... on User {
-							id
-							name
-					}
+					... UserFragment
 				}
 				 pageInfo {
 					endCursor
