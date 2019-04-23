@@ -60,25 +60,102 @@ fragment UserFragment on User {
 fragment CommitCommentFragment on CommitComment {
     id  
   	authorAssociation
-		bodyText
+	bodyText
   	createdAt
   	url
 }
 
 fragment ReleaseFragment on Release {
 	author{
-    id
-  }
-  createdAt
-  description
+		login
+	}
+	createdAt
+	description
+	id
+	isDraft
+	isPrerelease
+	name
+	publishedAt
+	tag
+	url
+	updatedAt
+}
+fragment IssuesFragment on Issue {
+	author{
+		login
+	}
+	bodyText
+	closed
+	closedAt
+	createdViaEmail
+	id
+	locked
+	number
+	publishedAt
+	state
+	title
+	updatedAt
+	url
+}
+
+fragment MilestonesFragment on Milestone {
+	description
+  dueOn
+  closed
+  closedAt
   id
-  isDraft
-  isPrerelease
-  name
-  publishedAt
-  tag
-  url
+  number
+  state
+  title
   updatedAt
+  url
+}
+
+fragment PullRequestFragment on PullRequest {
+	additions
+	author{
+		login
+	}
+	bodyText
+	changedFiles
+	mergeable
+	mergedAt
+	merged
+	milestone{
+		id
+	}
+	permalink
+	closed
+	closedAt
+	id
+	number
+	state
+	title
+	updatedAt
+	url
+}
+
+fragment PullRequestFragment on PullRequest {
+	author{
+		login
+	}
+	bodyText
+	changedFiles
+	mergeable
+	mergedAt
+	merged
+	milestone{
+		id
+	}
+	permalink
+	closed
+	closedAt
+	id
+	number
+	state
+	title
+	updatedAt
+	url
 }
 """
 REPOSITORY_DESCRIPTION = """
@@ -211,6 +288,63 @@ query {
 				totalCount
 				nodes {
 					... ReleaseFragment
+				}
+				 pageInfo {
+					endCursor
+					hasNextPage
+				}
+			}
+		}
+	}
+}
+"""
+
+REPOSITORY_ISSUES = """
+query {
+    resource(url: "https://github.com/tensorflow/tensorflow") {
+   		... on Repository {
+			issues(first: 100, after: null) {
+				totalCount
+				nodes {
+					... IssuesFragment
+				}
+				 pageInfo {
+					endCursor
+					hasNextPage
+				}
+			}
+		}
+	}
+}
+"""
+
+REPOSITORY_MILESTONES = """
+query {
+    resource(url: "https://github.com/tensorflow/tensorflow") {
+   		... on Repository {
+			milestones(first: 100, after: null) {
+				totalCount
+				nodes {
+					... MilestonesFragment
+				}
+				 pageInfo {
+					endCursor
+					hasNextPage
+				}
+			}
+		}
+	}
+}
+"""
+
+REPOSITORY_PULL_REQUESTS = """
+query {
+    resource(url: "https://github.com/tensorflow/tensorflow") {
+   		... on Repository {
+			pullRequests(first: 16, after: null) {
+				totalCount
+				nodes {
+					... PullRequestFragment
 				}
 				 pageInfo {
 					endCursor
