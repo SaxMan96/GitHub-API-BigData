@@ -26,7 +26,7 @@ def main(args):
 
     spider.load_repository("https://github.com/tensorflow/tensorflow")
 
-    # TODO loop (this is just a single iteration)
+    # TODO signals
     while spider.has_unprocessed():
         spider.process()
 

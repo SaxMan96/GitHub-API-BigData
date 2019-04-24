@@ -142,6 +142,7 @@ class Spider:
             'release': self._process_do_nothing,
             'issue': self._process_do_nothing,
             'pull': self._process_do_nothing,
+            'milestone': self._process_do_nothing,
         }
 
         for node in self.g.V().hasNot(TIME_PROCESSED).has(TIME_CREATED, P.lte(start)).order().by(Order.shuffle):
