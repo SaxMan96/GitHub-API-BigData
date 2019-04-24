@@ -27,7 +27,8 @@ def main(args):
     spider.load_repository("https://github.com/tensorflow/tensorflow")
 
     # TODO loop (this is just a single iteration)
-    spider.process()
+    while spider.has_unprocessed():
+        spider.process()
 
 
 if __name__ == '__main__':
