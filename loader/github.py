@@ -10,6 +10,7 @@ from loader import queries
 
 DEFAULT_ENDPOINT = 'https://api.github.com/graphql'
 
+
 def _is_id(id_or_url):
     return re.match(r'^[A-Za-z0-9+/]*={0,2}$', id_or_url)
 
@@ -47,18 +48,6 @@ class GitHub:
     def __init__(self, token, endpoint=None):
         super().__init__()
         self.connection = Connection(token, endpoint)
-
-    def get_rate_limit(self):
-        return self.connection.query("""
-        query {
-            rateLimit {
-                limit
-                cost
-                remaining
-                resetAt
-            }
-        }
-        """).json()['data']['rateLimit']
 
     def _get(self, id_or_url, query):
         response = self.connection.query(query).json()
@@ -101,6 +90,18 @@ class GitHub:
             has_next = output[field]['pageInfo']['hasNextPage']
             return edges, cursor, has_next
         yield from self.__paginated(standard)
+
+    def get_rate_limit(self):
+        return self.connection.query("""
+        query {
+            rateLimit {
+                limit
+                cost
+                remaining
+                resetAt
+            }
+        }
+        """).json()['data']['rateLimit']
 
     def get_repository(self, id_or_url):
         return self._get(id_or_url, Template(queries.REPOSITORY).substitute(selector=_selector(id_or_url)))
