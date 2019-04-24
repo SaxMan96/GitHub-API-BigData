@@ -4,7 +4,7 @@ import time
 from itertools import islice
 
 from gremlin_python.process.graph_traversal import GraphTraversal, __
-from gremlin_python.process.traversal import P
+from gremlin_python.process.traversal import P, Order
 
 from loader.github import GitHub
 
@@ -144,7 +144,7 @@ class Spider:
             'pull': self._process_do_nothing,
         }
 
-        for node in self.g.V().hasNot(TIME_PROCESSED).has(TIME_CREATED, P.lte(start)).order().by(TIME_CREATED):
+        for node in self.g.V().hasNot(TIME_PROCESSED).has(TIME_CREATED, P.lte(start)).order().by(Order.shuffle):
             label = self.g.V(node).label().next()
             uri = self.g.V(node).properties(URI).value().next()
             processors[label](uri)
