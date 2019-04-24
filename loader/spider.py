@@ -86,7 +86,7 @@ class Spider:
             else:
                 edge_props = None
             relative_id = self._merge_node(label, relative)
-            t = self._add_edge(edge, parent_id, relative_id, edge_props)
+            self._add_edge(edge, parent_id, relative_id, edge_props)
 
     def _process_repository(self, uri:str):
         node_id = self._get_node_id(uri)
@@ -100,7 +100,7 @@ class Spider:
 
         self._process_relatives(node_id, self.github.get_repository_commit_comments(uri), 'commit-comment', 'describes')
         self._process_relatives(node_id, self.github.get_repository_releases(uri), 'release', 'describes')
-        self._process_relatives(node_id, self.github.get_repository_releases(uri), 'issue', 'describes')
+        self._process_relatives(node_id, self.github.get_repository_issues(uri), 'issue', 'describes')
         self._process_relatives(node_id, self.github.get_repository_milestones(uri), 'milestone', 'describes')
         self._process_relatives(node_id, self.github.get_repository_pull_requests(uri), 'pull', 'describes')
 
