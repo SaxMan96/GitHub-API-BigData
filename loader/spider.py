@@ -102,7 +102,7 @@ class Spider:
         self._process_relatives(node_id, self.github.get_repository_releases(uri), 'release', 'describes')
         self._process_relatives(node_id, self.github.get_repository_issues(uri), 'issue', 'describes')
         self._process_relatives(node_id, self.github.get_repository_milestones(uri), 'milestone', 'describes')
-        self._process_relatives(node_id, self.github.get_repository_pull_requests(uri), 'pull', 'describes')
+        # self._process_relatives(node_id, self.github.get_repository_pull_requests(uri), 'pull', 'describes')
 
         self._process_relatives(node_id, self.github.get_repository_languages(uri), 'language', 'uses')
 
