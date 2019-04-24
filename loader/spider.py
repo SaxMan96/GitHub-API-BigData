@@ -115,7 +115,7 @@ class Spider:
         self._process_relatives(node_id, self.github.get_user_following(uri), 'user', 'follows')
         self._process_relatives(node_id, self.github.get_user_commit_comments(uri), 'commit-comment', 'wrote')
         self._process_relatives(node_id, self.github.get_user_issues(uri), 'issue', 'wrote')
-        self._process_relatives(node_id, self.github.get_user_pull_requests(uri), 'pull', 'created')
+        # self._process_relatives(node_id, self.github.get_user_pull_requests(uri), 'pull', 'created')
         self._process_relatives(node_id, self.github.get_user_repositories(uri), 'repository', 'created')
         self._process_relatives(node_id, self.github.get_user_repositories_contributed_to(uri), 'repository', 'contributed-to')
         self._process_relatives(node_id, self.github.get_user_watching(uri), 'repository', 'watches')
