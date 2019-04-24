@@ -28,10 +28,11 @@ TIME_PROCESSED = '_processed'
 
 class Spider:
 
-    def __init__(self, g:GraphTraversal, github:GitHub):
+    def __init__(self, g:GraphTraversal, github:GitHub, relatives_cap):
         super().__init__()
         self.github = github
         self.g = g
+        self.relatives_cap = relatives_cap
 
     def _get_or_create_node(self, label:str, uri:str):
         return self.g.V().hasLabel(label).has(URI, uri).fold().coalesce(
@@ -90,7 +91,7 @@ class Spider:
         return self._merge_node('repository', self.github.get_repository(ghid_or_url))
 
     def _process_relatives(self, parent_id, relatives, label, edge):
-        for relative in relatives:
+        for relative in islice(relatives, self.relatives_cap):
             if 'node' in relative:
                 edge_props = relative
                 relative = relative.pop('node')
@@ -98,14 +99,23 @@ class Spider:
                 edge_props = None
             relative_id = self._merge_node(label, relative)
             t = self._add_edge(edge, parent_id, relative_id, edge_props)
-            print(self.g.E(t).valueMap().next())
 
     def _process_repository(self, uri:str):
         node_id = self._get_node_id(uri)
 
         # TODO remove limit
-        self._process_relatives(node_id, islice(self.github.get_repository_forks(uri), 3), 'repository', 'fork')
+        # TODO get ancestors (OG fork)
+        # self._process_relatives(node_id, islice(self.github.get_repository_forks(uri), 3), 'repository', 'fork')
         self._process_relatives(node_id, self.github.get_repository_assignable_users(uri), 'user', 'assignable')
+        # self._process_relatives(node_id, self.github.get_repository_collaborators(uri), 'user', 'collaborates')
+        self._process_relatives(node_id, self.github.get_repository_stargazers(uri), 'user', 'stargazer')
+
+        self._process_relatives(node_id, self.github.get_repository_commit_comments(uri), 'commit-comment', 'describes')
+        self._process_relatives(node_id, self.github.get_repository_releases(uri), 'release', 'describes')
+        self._process_relatives(node_id, self.github.get_repository_releases(uri), 'issue', 'describes')
+        self._process_relatives(node_id, self.github.get_repository_milestones(uri), 'milestone', 'describes')
+        self._process_relatives(node_id, self.github.get_repository_pull_requests(uri), 'pull', 'describes')
+
         self._process_relatives(node_id, self.github.get_repository_languages(uri), 'language', 'uses')
 
         self._mark_processed(node_id)
@@ -113,8 +123,19 @@ class Spider:
     def _process_user(self, uri:str):
         node_id = self._get_node_id(uri)
 
-        # TODO
+        self._process_relatives(node_id, self.github.get_user_followers(uri), 'user', 'follower')
+        self._process_relatives(node_id, self.github.get_user_following(uri), 'user', 'follows')
+        self._process_relatives(node_id, self.github.get_user_commit_comments(uri), 'commit-comment', 'wrote')
+        self._process_relatives(node_id, self.github.get_user_issues(uri), 'issue', 'wrote')
+        self._process_relatives(node_id, self.github.get_user_pull_requests(uri), 'pull', 'created')
+        self._process_relatives(node_id, self.github.get_user_repositories(uri), 'repository', 'created')
+        self._process_relatives(node_id, self.github.get_user_repositories_contributed_to(uri), 'repository', 'contributed-to')
+        self._process_relatives(node_id, self.github.get_user_watching(uri), 'repository', 'watches')
 
+        self._mark_processed(node_id)
+
+    def _process_do_nothing(self, uri:str):
+        node_id = self._get_node_id(uri)
         self._mark_processed(node_id)
 
     def has_unprocessed(self):
@@ -128,6 +149,11 @@ class Spider:
         processors = {
             'repository': self._process_repository,
             'user': self._process_user,
+            'language': self._process_do_nothing,
+            'commit-comment': self._process_do_nothing,
+            'release': self._process_do_nothing,
+            'issue': self._process_do_nothing,
+            'pull': self._process_do_nothing,
         }
 
         for node in self.g.V().hasNot(TIME_PROCESSED).has(TIME_CREATED, P.lte(start)).order().by(TIME_CREATED):
@@ -143,25 +169,19 @@ def main(args):
     g = graph.traversal().withRemote(DriverRemoteConnection(DB_URL,'g'))
 
     github = GitHub(args.token)
-    spider = Spider(g, github)
+    spider = Spider(g, github, args.relatives_cap)
 
-    # example rate limit:
     print(github.get_rate_limit())
 
     spider.load_repository("https://github.com/tensorflow/tensorflow")
 
     spider.process()
 
-    print('vertexes')
-    pprint(g.V().hasLabel('repository').valueMap().toList())
-
-    print('edges')
-    pprint(g.V().outE('fork').inV().valueMap().toList())
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--db-url', type=str, default=DB_URL)
     parser.add_argument('--quiet', action='store_true')
+    parser.add_argument('--relatives-cap', type=int, default=128)
     parser.add_argument('token', type=str, help="See https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line.")
     main(parser.parse_args())

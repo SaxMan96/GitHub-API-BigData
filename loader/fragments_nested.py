@@ -5,6 +5,9 @@ fragment RepositoryFragment on Repository {
     id
     name
     description
+    codeOfConduct {
+        id
+    }
     createdAt
     diskUsage
     forkCount
@@ -15,6 +18,17 @@ fragment RepositoryFragment on Repository {
     isMirror
     isPrivate
     url
+    licenseInfo{
+        id
+        body
+        description
+        featured
+        nickname
+        permissions{
+            description
+            label
+        }
+    }
 }
 """
 
@@ -41,6 +55,10 @@ fragment UserFragment on User {
     isSiteAdmin
     isViewer
     location
+    status {
+      id,
+      message
+    }
     updatedAt
     url
     viewerCanCreateProjects
@@ -61,6 +79,9 @@ fragment CommitCommentFragment on CommitComment {
 
 RELEASE =  """
 fragment ReleaseFragment on Release {
+    author{
+        login
+    }
     createdAt
     description
     id
@@ -68,6 +89,7 @@ fragment ReleaseFragment on Release {
     isPrerelease
     name
     publishedAt
+    tag
     url
     updatedAt
 }
@@ -75,6 +97,9 @@ fragment ReleaseFragment on Release {
 
 ISSUE = """
 fragment IssueFragment on Issue {
+    author{
+        login
+    }
     bodyText
     closed
     closedAt
@@ -108,11 +133,17 @@ fragment MilestonesFragment on Milestone {
 PULL_REQUEST =  """
 fragment PullRequestFragment on PullRequest {
     additions
+    author{
+        login
+    }
     bodyText
     changedFiles
     mergeable
     mergedAt
     merged
+    milestone{
+        id
+    }
     permalink
     closed
     closedAt
