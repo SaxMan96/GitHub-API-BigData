@@ -34,8 +34,6 @@ query {
     $selector {
         ... on Repository {
             languages(first:100, after: $cursor) {
-                totalSize
-                totalCount
                 edges {
                     size
                     node {

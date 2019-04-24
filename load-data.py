@@ -39,6 +39,12 @@ class Spider:
             __.addV(label)
         )
 
+    def _get_or_create_edge(self, label:str, start:int, end:int):
+        return self.g.V(start).outE(label).filter(__.inV().hasId(end)).fold().coalesce(
+            __.unfold(),
+            self.g.V(start).addE(label).to(self.g.V(end))
+        )
+
     def _get_node_id(self, uri:str):
         nodes = self.g.V().has(URI, uri).id().toList()
         assert len(nodes) <= 1
@@ -46,6 +52,13 @@ class Spider:
         if nodes:
             return nodes[0]
         return None
+
+    def _add_properties(self, vertex, properties):
+        if properties is not None:
+            for key, value in properties.items():
+                if value is not None:
+                    vertex = vertex.property(key, value)
+        return vertex
 
     def _merge_node(self, label:str, properties: dict):
         assert URI not in properties
@@ -58,18 +71,17 @@ class Spider:
 
         vertex.property(URI, uri)
         vertex.property(TIME_CREATED, time.time())
-        for key, value in properties.items():
-            if value is not None:
-                vertex = vertex.property(key, value)
+        vertex = self._add_properties(vertex, properties)
 
         return vertex.id().next()
 
     def _has_edge(self, label:str, start:int, end:int):
         return self.g.V(start).outE(label).filter(__.inV().hasId(end)).hasNext()
 
-    def _add_edge(self, label:str, start:int, end:int):
-        if not self._has_edge(label, start, end):
-            return self.g.V(start).addE(label).to(self.g.V(end)).id().next()
+    def _add_edge(self, label:str, start:int, end:int, properties=None):
+        edge = self._get_or_create_edge(label, start, end)
+        edge = self._add_properties(edge, properties)
+        return edge.id().next()
 
     def _mark_processed(self, node_id:int):
         self.g.V(node_id).property(TIME_PROCESSED, time.time()).next()
@@ -77,22 +89,24 @@ class Spider:
     def load_repository(self, ghid_or_url):
         return self._merge_node('repository', self.github.get_repository(ghid_or_url))
 
+    def _process_relatives(self, parent_id, relatives, label, edge):
+        for relative in relatives:
+            if 'node' in relative:
+                edge_props = relative
+                relative = relative.pop('node')
+            else:
+                edge_props = None
+            relative_id = self._merge_node(label, relative)
+            t = self._add_edge(edge, parent_id, relative_id, edge_props)
+            print(self.g.E(t).valueMap().next())
+
     def _process_repository(self, uri:str):
         node_id = self._get_node_id(uri)
 
         # TODO remove limit
-        for fork in islice(self.github.get_repository_forks(uri), 3):
-            fork_id = self._merge_node('repository', fork)
-            self._add_edge('fork', node_id, fork_id)
-
-        # TODO languages
-        # for lang in self.github.get_repository_languages(uri):
-        #     lang_id = self._merge_node('language', lang)
-        #     self._add_edge('language', repo_id, lang_id)
-
-        for user in self.github.get_repository_assignable_users(uri):
-            user_id = self._merge_node('user', user)
-            self._add_edge('assignable_user', node_id, user_id)
+        self._process_relatives(node_id, islice(self.github.get_repository_forks(uri), 3), 'repository', 'fork')
+        self._process_relatives(node_id, self.github.get_repository_assignable_users(uri), 'user', 'assignable')
+        self._process_relatives(node_id, self.github.get_repository_languages(uri), 'language', 'uses')
 
         self._mark_processed(node_id)
 

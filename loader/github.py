@@ -133,18 +133,30 @@ class GitHub:
             for result in nodes:
                 yield result
 
-    def _paginated(self, id_or_url, query, field, **kwargs):
-        def standard(cursor):
-            output = self._get(id_or_url, Template(query) \
+    def _query_with_template(self, id_or_url, query_template, cursor, **kwargs):
+        return self._get(id_or_url, Template(query_template) \
                 .substitute(selector=_selector(id_or_url), cursor=_cursor(cursor), **kwargs))
+
+    def _paginated_nodes(self, id_or_url, query, field, **kwargs):
+        def standard(cursor):
+            output = self._query_with_template(id_or_url, query, cursor, **kwargs)
             nodes = output[field]['nodes']
             cursor = output[field]['pageInfo']['endCursor']
             has_next = output[field]['pageInfo']['hasNextPage']
             return nodes, cursor, has_next
         yield from self.__paginated(standard)
 
+    def _paginated_edges(self, id_or_url, query, field, **kwargs):
+        def standard(cursor):
+            output = self._query_with_template(id_or_url, query, cursor, **kwargs)
+            edges = output[field]['edges']
+            cursor = output[field]['pageInfo']['endCursor']
+            has_next = output[field]['pageInfo']['hasNextPage']
+            return edges, cursor, has_next
+        yield from self.__paginated(standard)
+
     def get_repository_languages(self, id_or_url):
-        yield from self._paginated(id_or_url, queries.REPOSITORY_LANGUAGES, 'languages')
+        yield from self._paginated_edges(id_or_url, queries.REPOSITORY_LANGUAGES, 'languages')
 
     def get_repository_assignable_users(self, id_or_url):
-        yield from self._paginated(id_or_url, queries.REPOSITORY_ASSIGNABLE_USERS, 'assignableUsers')
+        yield from self._paginated_nodes(id_or_url, queries.REPOSITORY_ASSIGNABLE_USERS, 'assignableUsers')
