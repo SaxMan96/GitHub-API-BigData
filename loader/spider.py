@@ -23,7 +23,7 @@ class Spider:
         self.relatives_cap = relatives_cap
 
     def _get_or_create_node(self, label:str, uri:str):
-        return self.g.V().hasLabel(label).has(URI, uri).fold().coalesce(
+        return self.g.V().has(URI, uri).hasLabel(label).fold().coalesce(
             __.unfold(),
             __.addV(label)
         )
@@ -91,7 +91,6 @@ class Spider:
     def _process_repository(self, uri:str):
         node_id = self._get_node_id(uri)
 
-        # TODO remove limit
         # TODO get ancestors (OG fork)
         # self._process_relatives(node_id, islice(self.github.get_repository_forks(uri), 3), 'repository', 'fork')
         self._process_relatives(node_id, self.github.get_repository_assignable_users(uri), 'user', 'assignable')
