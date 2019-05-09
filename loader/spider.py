@@ -3,6 +3,7 @@
 import time
 from itertools import islice
 
+from tqdm import tqdm
 from gremlin_python.process.graph_traversal import GraphTraversal, __
 from gremlin_python.process.traversal import P, Order
 
@@ -25,7 +26,7 @@ class Spider:
     def _get_or_create_node(self, label:str, uri:str):
         return self.g.V().has(URI, uri).hasLabel(label).fold().coalesce(
             __.unfold(),
-            __.addV(label)
+            __.addV(label).property(URI, uri)
         )
 
     def _get_or_create_edge(self, label:str, start:int, end:int):
@@ -58,7 +59,6 @@ class Spider:
         assert self.g.V().has(URI, uri).count().next() <= 1
         vertex = self._get_or_create_node(label, uri)
 
-        vertex.property(URI, uri)
         vertex.property(TIME_CREATED, time.time())
         vertex = self._add_properties(vertex, properties)
 
@@ -92,6 +92,10 @@ class Spider:
         node_id = self._get_node_id(uri)
 
         # TODO get ancestors (OG fork)
+        # TODO fix broken ones
+        # TODO add nested fields
+        # TODO bulk/async?
+        # TODO remove pointles labels/rename?
         # self._process_relatives(node_id, islice(self.github.get_repository_forks(uri), 3), 'repository', 'fork')
         self._process_relatives(node_id, self.github.get_repository_assignable_users(uri), 'user', 'assignable')
         # self._process_relatives(node_id, self.github.get_repository_collaborators(uri), 'user', 'collaborates')
@@ -110,6 +114,7 @@ class Spider:
     def _process_user(self, uri:str):
         node_id = self._get_node_id(uri)
 
+        # TODO merge follower follows
         self._process_relatives(node_id, self.github.get_user_followers(uri), 'user', 'follower')
         self._process_relatives(node_id, self.github.get_user_following(uri), 'user', 'follows')
         self._process_relatives(node_id, self.github.get_user_commit_comments(uri), 'commit-comment', 'wrote')
@@ -126,6 +131,7 @@ class Spider:
         self._mark_processed(node_id)
 
     def has_unprocessed(self):
+        # TODO check if this closes query
         return self.g.V().hasNot(TIME_PROCESSED).hasNext()
 
     def process(self):
@@ -144,7 +150,9 @@ class Spider:
             'milestone': self._process_do_nothing,
         }
 
-        for node in self.g.V().hasNot(TIME_PROCESSED).has(TIME_CREATED, P.lte(start)).order().by(Order.shuffle):
+        # shuffle takes a long time
+        nodes = self.g.V().hasNot(TIME_PROCESSED).has(TIME_CREATED, P.lte(start)) #.order().by(Order.shuffle)
+        for node in tqdm(nodes, total=nodes_count, unit='node', ):
             label = self.g.V(node).label().next()
             uri = self.g.V(node).properties(URI).value().next()
             processors[label](uri)
