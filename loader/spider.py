@@ -60,6 +60,7 @@ class Spider:
         vertex = self._get_or_create_node(label, uri)
 
         vertex.property(TIME_CREATED, time.time())
+        vertex.property(TIME_PROCESSED, 0.0)
         vertex = self._add_properties(vertex, properties)
 
         return vertex.id().next()
@@ -134,11 +135,11 @@ class Spider:
 
     def has_unprocessed(self):
         # TODO check if this closes query
-        return self.g.V().hasNot(TIME_PROCESSED).hasNext()
+        return self.g.V().has(TIME_PROCESSED, 0.0).hasNext()
 
     def process(self):
         start = time.time()
-        nodes_count = self.g.V().has(TIME_CREATED, P.lte(start)).hasNot(TIME_PROCESSED).count().next()
+        nodes_count = self.g.V().has(TIME_CREATED, P.lte(start)).has(TIME_PROCESSED, 0.0).count().next()
         print('Starting iteration at {} with {}/{} nodes to process.'.format(start, nodes_count, self.g.V().count().next()))
 
         processors = {
@@ -153,7 +154,7 @@ class Spider:
         }
 
         # shuffle takes a long time
-        nodes = self.g.V().has(TIME_CREATED, P.lte(start)).hasNot(TIME_PROCESSED) #.order().by(Order.shuffle)
+        nodes = self.g.V().has(TIME_CREATED, P.lte(start)).has(TIME_PROCESSED, 0.0) #.order().by(Order.shuffle)
         for node in tqdm(nodes, total=nodes_count, unit='node', ):
             label = self.g.V(node).label().next()
             uri = self.g.V(node).properties(URI).value().next()
