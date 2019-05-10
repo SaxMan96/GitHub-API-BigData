@@ -136,7 +136,7 @@ class Spider:
 
     def process(self):
         start = time.time()
-        nodes_count = self.g.V().hasNot(TIME_PROCESSED).has(TIME_CREATED, P.lte(start)).count().next()
+        nodes_count = self.g.V().has(TIME_CREATED, P.lte(start)).hasNot(TIME_PROCESSED).count().next()
         print('Starting iteration at {} with {}/{} nodes to process.'.format(start, nodes_count, self.g.V().count().next()))
 
         processors = {
@@ -151,7 +151,7 @@ class Spider:
         }
 
         # shuffle takes a long time
-        nodes = self.g.V().hasNot(TIME_PROCESSED).has(TIME_CREATED, P.lte(start)) #.order().by(Order.shuffle)
+        nodes = self.g.V().has(TIME_CREATED, P.lte(start)).hasNot(TIME_PROCESSED) #.order().by(Order.shuffle)
         for node in tqdm(nodes, total=nodes_count, unit='node', ):
             label = self.g.V(node).label().next()
             uri = self.g.V(node).properties(URI).value().next()
