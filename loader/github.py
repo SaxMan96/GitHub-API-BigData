@@ -5,6 +5,8 @@ import requests
 
 from string import Template
 
+import backoff
+
 from loader import queries
 
 
@@ -22,6 +24,7 @@ class Connection:
         self.endpoint = endpoint or DEFAULT_ENDPOINT
         self.token = token
 
+    @backoff.on_exception(backoff.expo, requests.exceptions.HTTPError)
     def query(self, query, ignore_error=False):
         headers = {'Authorization': 'bearer {}'.format(self.token)}
 

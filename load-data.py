@@ -2,6 +2,7 @@
 
 """Script for downloading repositories from GitHub nad loading them into JanusGraph."""
 
+import logging
 import argparse
 
 from gremlin_python.structure.graph import Graph
@@ -10,11 +11,15 @@ from gremlin_python.driver.driver_remote_connection import DriverRemoteConnectio
 from loader.github import GitHub
 from loader.spider import Spider
 
+
 DB_URL = 'ws://localhost:8182/gremlin'
 
 
 def main(args):
-    # TODO quiet + logging
+    log_level = logging.ERROR if args.quiet else logging.INFO
+    logging.basicConfig(level=log_level)
+    logging.getLogger('backoff').addHandler(logging.StreamHandler())
+    logging.getLogger('backoff').setLevel(log_level)
 
     graph = Graph()
     g = graph.traversal().withRemote(DriverRemoteConnection(DB_URL,'g'))
@@ -28,7 +33,7 @@ def main(args):
 
     print('Loaded seeds.')
 
-    # TODO signals
+    # TODO signals + errors
     while spider.has_unprocessed():
         spider.process()
 

@@ -103,7 +103,8 @@ class Spider:
 
         self._process_relatives(node_id, self.github.get_repository_commit_comments(uri), 'commit-comment', 'describes')
         self._process_relatives(node_id, self.github.get_repository_releases(uri), 'release', 'describes')
-        self._process_relatives(node_id, self.github.get_repository_issues(uri), 'issue', 'describes')
+        # TODO decode error
+        # self._process_relatives(node_id, self.github.get_repository_issues(uri), 'issue', 'describes')
         self._process_relatives(node_id, self.github.get_repository_milestones(uri), 'milestone', 'describes')
         # self._process_relatives(node_id, self.github.get_repository_pull_requests(uri), 'pull', 'describes')
 
@@ -118,7 +119,8 @@ class Spider:
         self._process_relatives(node_id, self.github.get_user_followers(uri), 'user', 'follower')
         self._process_relatives(node_id, self.github.get_user_following(uri), 'user', 'follows')
         self._process_relatives(node_id, self.github.get_user_commit_comments(uri), 'commit-comment', 'wrote')
-        self._process_relatives(node_id, self.github.get_user_issues(uri), 'issue', 'wrote')
+        # TODO decode error
+        # self._process_relatives(node_id, self.github.get_user_issues(uri), 'issue', 'wrote')
         # self._process_relatives(node_id, self.github.get_user_pull_requests(uri), 'pull', 'created')
         self._process_relatives(node_id, self.github.get_user_repositories(uri), 'repository', 'created')
         self._process_relatives(node_id, self.github.get_user_repositories_contributed_to(uri), 'repository', 'contributed-to')
