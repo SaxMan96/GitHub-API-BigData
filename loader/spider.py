@@ -1,6 +1,8 @@
 """GitHub graph clawrer."""
 
 import time
+import logging
+import traceback
 from itertools import islice
 
 from tqdm import tqdm
@@ -13,6 +15,8 @@ from loader.github import GitHub
 URI = '_uri'
 TIME_CREATED = '_created'
 TIME_PROCESSED = '_processed'
+ERROR = '_error'
+ERROR_TRACE = '_error_trace'
 
 
 class Spider:
@@ -137,10 +141,12 @@ class Spider:
         # TODO check if this closes query
         return self.g.V().has(TIME_PROCESSED, 0.0).hasNext()
 
-    def process(self):
+    def process(self, quiet=False):
         start = time.time()
         nodes_count = self.g.V().has(TIME_PROCESSED, 0.0).has(TIME_CREATED, P.lte(start)).count().next()
-        print('Starting iteration at {} with {}/{} nodes to process.'.format(start, nodes_count, self.g.V().count().next()))
+
+        if not quiet:
+            logging.info('Starting iteration at {} with {}/{} nodes to process.'.format(start, nodes_count, self.g.V().count().next()))
 
         processors = {
             'repository': self._process_repository,
@@ -153,9 +159,17 @@ class Spider:
             'milestone': self._process_do_nothing,
         }
 
-        # shuffle takes a long time
-        nodes = self.g.V().has(TIME_PROCESSED, 0.0).has(TIME_CREATED, P.lte(start)) #.order().by(Order.shuffle)
-        for node in tqdm(nodes, total=nodes_count, unit='node', ):
+        # shuffle takes a long time, we process nodes in order instead
+        nodes = self.g.V().has(TIME_PROCESSED, 0.0).has(TIME_CREATED, P.lte(start))
+        for node in tqdm(nodes, total=nodes_count, unit='node', disable=quiet):
             label = self.g.V(node).label().next()
             uri = self.g.V(node).properties(URI).value().next()
-            processors[label](uri)
+            
+            try:
+                processors[label](uri)
+            except Exception as e:
+                logging.exception(e)
+                self.g.V(node)\
+                    .property(ERROR, str(e))\
+                    .property(ERROR_TRACE, traceback.format_exc())\
+                    .iterate()
