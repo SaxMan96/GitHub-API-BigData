@@ -83,7 +83,7 @@ class Spider:
     def load_repository(self, ghid_or_url):
         return self._merge_node('repository', self.github.get_repository(ghid_or_url))
 
-    def _process_relatives(self, parent_id, relatives, label, edge):
+    def _process_relatives(self, parent_id, relatives, label, edge, reverse_edge=False):
         for relative in islice(relatives, self.relatives_cap):
             if 'node' in relative:
                 edge_props = relative
@@ -91,7 +91,11 @@ class Spider:
             else:
                 edge_props = None
             relative_id = self._merge_node(label, relative)
-            self._add_edge(edge, parent_id, relative_id, edge_props)
+
+            if reverse_edge:
+                self._add_edge(edge, relative_id, parent_id, edge_props)
+            else:
+                self._add_edge(edge, parent_id, relative_id, edge_props)
 
     def _process_repository(self, uri:str):
         node_id = self._get_node_id(uri)
@@ -103,15 +107,15 @@ class Spider:
         # TODO remove pointles labels/rename?
         # self._process_relatives(node_id, islice(self.github.get_repository_forks(uri), 3), 'repository', 'fork')
         self._process_relatives(node_id, self.github.get_repository_assignable_users(uri), 'user', 'assignable')
-        # self._process_relatives(node_id, self.github.get_repository_collaborators(uri), 'user', 'collaborates')
+        # self._process_relatives(node_id, self.github.get_repository_collaborators(uri), 'user', 'collaborator')
+        # TODO why are stargazers only in repo?
         self._process_relatives(node_id, self.github.get_repository_stargazers(uri), 'user', 'stargazer')
 
-        self._process_relatives(node_id, self.github.get_repository_commit_comments(uri), 'commit-comment', 'describes')
-        self._process_relatives(node_id, self.github.get_repository_releases(uri), 'release', 'describes')
-        # TODO decode error
-        # self._process_relatives(node_id, self.github.get_repository_issues(uri), 'issue', 'describes')
-        self._process_relatives(node_id, self.github.get_repository_milestones(uri), 'milestone', 'describes')
-        # self._process_relatives(node_id, self.github.get_repository_pull_requests(uri), 'pull', 'describes')
+        self._process_relatives(node_id, self.github.get_repository_commit_comments(uri), 'commit-comment', 'contains')
+        self._process_relatives(node_id, self.github.get_repository_releases(uri), 'release', 'contains')
+        self._process_relatives(node_id, self.github.get_repository_issues(uri), 'issue', 'contains')
+        self._process_relatives(node_id, self.github.get_repository_milestones(uri), 'milestone', 'contains')
+        # self._process_relatives(node_id, self.github.get_repository_pull_requests(uri), 'pull', 'contains')
 
         self._process_relatives(node_id, self.github.get_repository_languages(uri), 'language', 'uses')
 
@@ -121,11 +125,11 @@ class Spider:
         node_id = self._get_node_id(uri)
 
         # TODO merge follower follows
-        self._process_relatives(node_id, self.github.get_user_followers(uri), 'user', 'follower')
+        self._process_relatives(node_id, self.github.get_user_followers(uri), 'user', 'follows', reverse_edge=True)
         self._process_relatives(node_id, self.github.get_user_following(uri), 'user', 'follows')
         self._process_relatives(node_id, self.github.get_user_commit_comments(uri), 'commit-comment', 'wrote')
         # TODO decode error
-        # self._process_relatives(node_id, self.github.get_user_issues(uri), 'issue', 'wrote')
+        self._process_relatives(node_id, self.github.get_user_issues(uri), 'issue', 'wrote')
         # self._process_relatives(node_id, self.github.get_user_pull_requests(uri), 'pull', 'created')
         self._process_relatives(node_id, self.github.get_user_repositories(uri), 'repository', 'created')
         self._process_relatives(node_id, self.github.get_user_repositories_contributed_to(uri), 'repository', 'contributed-to')
@@ -164,7 +168,7 @@ class Spider:
         for node in tqdm(nodes, total=nodes_count, unit='node', disable=quiet):
             label = self.g.V(node).label().next()
             uri = self.g.V(node).properties(URI).value().next()
-            
+
             try:
                 processors[label](uri)
             except Exception as e:
