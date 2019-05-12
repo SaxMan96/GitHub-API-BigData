@@ -30,7 +30,7 @@ class Connection:
         self.endpoint = endpoint or DEFAULT_ENDPOINT
         self.token = token
 
-    @backoff.on_exception(backoff.fibo, requests.exceptions.HTTPError, on_backoff=_on_backoff)
+    @backoff.on_exception(backoff.fibo, requests.exceptions.HTTPError, max_tries=5, on_backoff=_on_backoff)
     def query(self, query, ignore_error=False):
         headers = {'Authorization': 'bearer {}'.format(self.token)}
 
