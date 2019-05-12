@@ -1,8 +1,10 @@
 """GitHub API connector"""
 
 import re
+import logging
 import requests
 
+from pprint import pformat
 from string import Template
 
 import backoff
@@ -17,6 +19,10 @@ def _is_id(id_or_url):
     return re.match(r'^[A-Za-z0-9+/]*={0,2}$', id_or_url)
 
 
+def _on_backoff(details):
+    logging.info(pformat(details['args'][1]))
+
+
 class Connection:
 
     def __init__(self, token, endpoint=None):
@@ -24,7 +30,7 @@ class Connection:
         self.endpoint = endpoint or DEFAULT_ENDPOINT
         self.token = token
 
-    @backoff.on_exception(backoff.expo, requests.exceptions.HTTPError)
+    @backoff.on_exception(backoff.fibo, requests.exceptions.HTTPError, on_backoff=_on_backoff)
     def query(self, query, ignore_error=False):
         headers = {'Authorization': 'bearer {}'.format(self.token)}
 

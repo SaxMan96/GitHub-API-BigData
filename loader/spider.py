@@ -1,4 +1,4 @@
-"""GitHub graph clawrer."""
+"""GitHub graph crawler."""
 
 import time
 import logging
@@ -119,7 +119,8 @@ class Spider:
         self._process_relatives(node_id, self.github.get_repository_releases(uri), 'release', 'contains')
         self._process_relatives(node_id, self.github.get_repository_issues(uri), 'issue', 'contains')
         self._process_relatives(node_id, self.github.get_repository_milestones(uri), 'milestone', 'contains')
-        self._process_relatives(node_id, self.github.get_repository_pull_requests(uri), 'pull', 'contains')
+        # TODO these often cause 502
+        # self._process_relatives(node_id, self.github.get_repository_pull_requests(uri), 'pull', 'contains')
 
         self._process_relatives(node_id, self.github.get_repository_languages(uri), 'language', 'uses')
 
@@ -132,7 +133,8 @@ class Spider:
         self._process_relatives(node_id, self.github.get_user_following(uri), 'user', 'follows')
         self._process_relatives(node_id, self.github.get_user_commit_comments(uri), 'commit-comment', 'wrote')
         self._process_relatives(node_id, self.github.get_user_issues(uri), 'issue', 'wrote')
-        self._process_relatives(node_id, self.github.get_user_pull_requests(uri), 'pull', 'created')
+        # TODO these often cause 502
+        # self._process_relatives(node_id, self.github.get_user_pull_requests(uri), 'pull', 'created')
         self._process_relatives(node_id, self.github.get_user_repositories(uri), 'repository', 'created')
         self._process_relatives(node_id, self.github.get_user_repositories_contributed_to(uri), 'repository', 'contributed-to')
         self._process_relatives(node_id, self.github.get_user_watching(uri), 'repository', 'watches')
