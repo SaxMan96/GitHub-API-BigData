@@ -42,6 +42,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--db-url', type=str, default=DB_URL)
     parser.add_argument('--quiet', action='store_true')
-    parser.add_argument('--relatives-cap', type=int, default=100)
+    parser.add_argument('--relatives-cap', type=int, default=300)
     parser.add_argument('token', type=str, help="See https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line.")
     main(parser.parse_args())
