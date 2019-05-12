@@ -74,31 +74,35 @@ class GitHub:
         return self._get(id_or_url, Template(query_template) \
                 .substitute(selector=_selector(id_or_url), cursor=_cursor(cursor), **kwargs))
 
-    def __paginated(self, method, cursor=None):
+    def __paginated(self, method, cursor=None, limit=None):
         cursor = cursor
         has_next = True
         while has_next:
-            nodes, cursor, has_next = method(cursor)
+            nodes, total_count, cursor, has_next = method(cursor)
+            if limit is not None and total_count > limit:
+                raise RuntimeError('Nodes exided total limit: {} > {}'.format(total_count, limit))
             for result in nodes:
                 yield result
 
-    def _paginated_nodes(self, id_or_url, query, field, **kwargs):
+    def _paginated_nodes(self, id_or_url, query, field, limit=None, **kwargs):
         def standard(cursor):
             output = self._query_with_template(id_or_url, query, cursor, **kwargs)
             nodes = output[field]['nodes']
+            total_count = output[field]['totalCount']
             cursor = output[field]['pageInfo']['endCursor']
             has_next = output[field]['pageInfo']['hasNextPage']
-            return nodes, cursor, has_next
-        yield from self.__paginated(standard)
+            return nodes, total_count, cursor, has_next
+        yield from self.__paginated(standard, limit=limit)
 
-    def _paginated_edges(self, id_or_url, query, field, **kwargs):
+    def _paginated_edges(self, id_or_url, query, field, limit=None, **kwargs):
         def standard(cursor):
             output = self._query_with_template(id_or_url, query, cursor, **kwargs)
             edges = output[field]['edges']
+            total_count = output[field]['totalCount']
             cursor = output[field]['pageInfo']['endCursor']
             has_next = output[field]['pageInfo']['hasNextPage']
-            return edges, cursor, has_next
-        yield from self.__paginated(standard)
+            return edges, total_count, cursor, has_next
+        yield from self.__paginated(standard, limit=limit)
 
     def get_rate_limit(self):
         return self.connection.query("""
@@ -115,56 +119,57 @@ class GitHub:
     def get_repository(self, id_or_url):
         return self._get(id_or_url, Template(queries.REPOSITORY).substitute(selector=_selector(id_or_url)))
 
-    def get_repository_forks(self, id_or_url):
-        yield from self._paginated_nodes(id_or_url, queries.REPOSITORY_FORKS, 'forks')
+    def get_repository_forks(self, id_or_url, limit=None):
+        yield from self._paginated_nodes(id_or_url, queries.REPOSITORY_FORKS, 'forks', limit)
 
-    def get_repository_languages(self, id_or_url):
-        yield from self._paginated_edges(id_or_url, queries.REPOSITORY_LANGUAGES, 'languages')
+    def get_repository_languages(self, id_or_url, limit=None):
+        yield from self._paginated_edges(id_or_url, queries.REPOSITORY_LANGUAGES, 'languages', limit)
 
-    def get_repository_assignable_users(self, id_or_url):
-        yield from self._paginated_nodes(id_or_url, queries.REPOSITORY_ASSIGNABLE_USERS, 'assignableUsers')
+    def get_repository_assignable_users(self, id_or_url, limit=None):
+        yield from self._paginated_nodes(id_or_url, queries.REPOSITORY_ASSIGNABLE_USERS, 'assignableUsers', limit)
 
-    def get_repository_collaborators(self, id_or_url):
-        yield from self._paginated_nodes(id_or_url, queries.REPOSITORY_COLABORATORS, 'collaborators')
+    def get_repository_collaborators(self, id_or_url, limit=None):
+        yield from self._paginated_nodes(id_or_url, queries.REPOSITORY_COLABORATORS, 'collaborators', limit)
 
-    def get_repository_stargazers(self, id_or_url):
-        yield from self._paginated_nodes(id_or_url, queries.REPOSITORY_STARGAZERS, 'stargazers')
+    def get_repository_stargazers(self, id_or_url, limit=None):
+        yield from self._paginated_nodes(id_or_url, queries.REPOSITORY_STARGAZERS, 'stargazers', limit)
 
-    def get_repository_commit_comments(self, id_or_url):
-        yield from self._paginated_nodes(id_or_url, queries.REPOSITORY_COMMIT_COMMENTS, 'commitComments')
+    def get_repository_commit_comments(self, id_or_url, limit=None):
+        yield from self._paginated_nodes(id_or_url, queries.REPOSITORY_COMMIT_COMMENTS, 'commitComments', limit)
 
-    def get_repository_releases(self, id_or_url):
-        yield from self._paginated_nodes(id_or_url, queries.REPOSITORY_RELEASES, 'releases')
+    def get_repository_releases(self, id_or_url, limit=None):
+        yield from self._paginated_nodes(id_or_url, queries.REPOSITORY_RELEASES, 'releases', limit)
 
-    def get_repository_issues(self, id_or_url):
-        yield from self._paginated_nodes(id_or_url, queries.REPOSITORY_ISSUES, 'issues')
+    def get_repository_issues(self, id_or_url, limit=None):
+        yield from self._paginated_nodes(id_or_url, queries.REPOSITORY_ISSUES, 'issues', limit)
 
-    def get_repository_milestones(self, id_or_url):
-        yield from self._paginated_nodes(id_or_url, queries.REPOSITORY_MILESTONES, 'milestones')
+    def get_repository_milestones(self, id_or_url, limit=None):
+        yield from self._paginated_nodes(id_or_url, queries.REPOSITORY_MILESTONES, 'milestones', limit)
 
-    def get_repository_pull_requests(self, id_or_url):
-        yield from self._paginated_nodes(id_or_url, queries.REPOSITORY_PULL_REQUESTS, 'pullRequests')
+    def get_repository_pull_requests(self, id_or_url, limit=None):
+        yield from self._paginated_nodes(id_or_url, queries.REPOSITORY_PULL_REQUESTS, 'pullRequests', limit)
 
-    def get_user_followers(self, id_or_url):
-        yield from self._paginated_nodes(id_or_url, queries.USER_FOLLOWERS, 'followers')
+    def get_user_followers(self, id_or_url, limit=None):
+        yield from self._paginated_nodes(id_or_url, queries.USER_FOLLOWERS, 'followers', limit)
 
-    def get_user_following(self, id_or_url):
-        yield from self._paginated_nodes(id_or_url, queries.USER_FOLLOWING, 'following')
+    def get_user_following(self, id_or_url, limit=None):
+        yield from self._paginated_nodes(id_or_url, queries.USER_FOLLOWING, 'following', limit)
 
-    def get_user_commit_comments(self, id_or_url):
-        yield from self._paginated_nodes(id_or_url, queries.USER_COMMIT_COMMENTS, 'commitComments')
+    def get_user_commit_comments(self, id_or_url, limit=None):
+        yield from self._paginated_nodes(id_or_url, queries.USER_COMMIT_COMMENTS, 'commitComments', limit)
 
-    def get_user_issues(self, id_or_url):
-        yield from self._paginated_nodes(id_or_url, queries.USER_ISSUES, 'issues')
+    def get_user_issues(self, id_or_url, limit=None):
+        yield from self._paginated_nodes(id_or_url, queries.USER_ISSUES, 'issues', limit)
 
-    def get_user_pull_requests(self, id_or_url):
-        yield from self._paginated_nodes(id_or_url, queries.USER_PULL_REQUESTS, 'pullRequests')
+    def get_user_pull_requests(self, id_or_url, limit=None):
+        yield from self._paginated_nodes(id_or_url, queries.USER_PULL_REQUESTS, 'pullRequests', limit)
 
-    def get_user_repositories(self, id_or_url):
-        yield from self._paginated_nodes(id_or_url, queries.USER_REPOSITORIES, 'repositories')
+    def get_user_repositories(self, id_or_url, limit=None):
+        yield from self._paginated_nodes(id_or_url, queries.USER_REPOSITORIES, 'repositories', limit)
 
-    def get_user_repositories_contributed_to(self, id_or_url):
-        yield from self._paginated_nodes(id_or_url, queries.USER_REPOSITORIES_CONTRIBUTED_TO, 'repositoriesContributedTo')
+    def get_user_repositories_contributed_to(self, id_or_url, limit=None):
+        yield from self._paginated_nodes(id_or_url, queries.USER_REPOSITORIES_CONTRIBUTED_TO,
+                                         'repositoriesContributedTo', limit)
 
-    def get_user_watching(self, id_or_url):
-        yield from self._paginated_nodes(id_or_url, queries.USER_WATCHING, 'watching')
+    def get_user_watching(self, id_or_url, limit=None):
+        yield from self._paginated_nodes(id_or_url, queries.USER_WATCHING, 'watching', limit)
