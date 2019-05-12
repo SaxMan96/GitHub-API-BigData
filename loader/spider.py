@@ -110,6 +110,7 @@ class Spider:
         # TODO rename?
         # self._process_relatives(node_id, islice(self.github.get_repository_forks(uri), 3), 'repository', 'fork')
         self._process_relatives(node_id, self.github.get_repository_assignable_users(uri), 'user', 'assignable')
+        # Must have access for collaborators...
         # self._process_relatives(node_id, self.github.get_repository_collaborators(uri), 'user', 'collaborator')
         # TODO why are stargazers only in repo?
         self._process_relatives(node_id, self.github.get_repository_stargazers(uri), 'user', 'stargazer')
@@ -118,7 +119,7 @@ class Spider:
         self._process_relatives(node_id, self.github.get_repository_releases(uri), 'release', 'contains')
         self._process_relatives(node_id, self.github.get_repository_issues(uri), 'issue', 'contains')
         self._process_relatives(node_id, self.github.get_repository_milestones(uri), 'milestone', 'contains')
-        # self._process_relatives(node_id, self.github.get_repository_pull_requests(uri), 'pull', 'contains')
+        self._process_relatives(node_id, self.github.get_repository_pull_requests(uri), 'pull', 'contains')
 
         self._process_relatives(node_id, self.github.get_repository_languages(uri), 'language', 'uses')
 
@@ -127,12 +128,11 @@ class Spider:
     def _process_user(self, uri:str):
         node_id = self._get_node_id(uri)
 
-        # TODO merge follower follows
         self._process_relatives(node_id, self.github.get_user_followers(uri), 'user', 'follows', reverse_edge=True)
         self._process_relatives(node_id, self.github.get_user_following(uri), 'user', 'follows')
         self._process_relatives(node_id, self.github.get_user_commit_comments(uri), 'commit-comment', 'wrote')
         self._process_relatives(node_id, self.github.get_user_issues(uri), 'issue', 'wrote')
-        # self._process_relatives(node_id, self.github.get_user_pull_requests(uri), 'pull', 'created')
+        self._process_relatives(node_id, self.github.get_user_pull_requests(uri), 'pull', 'created')
         self._process_relatives(node_id, self.github.get_user_repositories(uri), 'repository', 'created')
         self._process_relatives(node_id, self.github.get_user_repositories_contributed_to(uri), 'repository', 'contributed-to')
         self._process_relatives(node_id, self.github.get_user_watching(uri), 'repository', 'watches')
