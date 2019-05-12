@@ -17,6 +17,7 @@ query {
     $selector {
         ... on Repository {
             forks(first: 100, after: $cursor) {
+                totalCount
                 nodes {
                     ... RepositoryFragment
                 }
@@ -35,6 +36,7 @@ query {
     $selector {
         ... on Repository {
             languages(first:100, after: $cursor) {
+                totalCount
                 edges {
                     size
                     node {
@@ -56,6 +58,7 @@ query {
     $selector {
         ... on Repository {
             assignableUsers(first: 100, after: $cursor) {
+                totalCount
                 nodes {
                     ... UserFragment
                 }
@@ -74,6 +77,7 @@ query {
     $selector {
         ... on Repository {
             collaborators(first: 100, after: $cursor) {
+                totalCount
                 nodes {
                     ... UserFragment
                 }
@@ -92,6 +96,7 @@ query {
     $selector {
         ... on Repository {
             commitComments(first: 100, after: $cursor) {
+                totalCount
                 nodes {
                     ... CommitCommentFragment
                 }
@@ -110,6 +115,7 @@ query {
     $selector {
         ... on Repository {
             stargazers(first: 100, after: $cursor) {
+                totalCount
                 nodes {
                     ... UserFragment
                 }
@@ -128,6 +134,7 @@ query {
     $selector {
         ... on Repository {
             releases(first: 100, after: $cursor) {
+                totalCount
                 nodes {
                     ... ReleaseFragment
                 }
@@ -146,6 +153,7 @@ query {
     $selector {
         ... on Repository {
             issues(first: 100, after: $cursor) {
+                totalCount
                 nodes {
                     ... IssueFragment
                 }
@@ -164,6 +172,7 @@ query {
     $selector {
         ... on Repository {
             milestones(first: 100, after: $cursor) {
+                totalCount
                 nodes {
                     ... MilestonesFragment
                 }
@@ -182,6 +191,7 @@ query {
     $selector {
         ... on Repository {
             pullRequests(first: 16, after: $cursor) {
+                totalCount
                 nodes {
                     ... PullRequestFragment
                 }
@@ -200,6 +210,7 @@ query {
     $selector {
         ... on User {
             commitComments(first: 100, after: $cursor) {
+                totalCount
                 nodes {
                     ... CommitCommentFragment
                 }
@@ -218,6 +229,7 @@ query {
     $selector {
         ... on User {
             followers(first: 100, after: $cursor) {
+                totalCount
                 nodes {
                     ... UserFragment
                 }
@@ -236,6 +248,7 @@ query {
     $selector {
         ... on User {
             following(first: 100, after: $cursor) {
+                totalCount
                 nodes {
                     ... UserFragment
                 }
@@ -254,6 +267,7 @@ query {
     $selector {
         ... on User {
             issues(first: 100, after: $cursor) {
+                totalCount
                 nodes {
                     ... IssueFragment
                 }
@@ -272,6 +286,7 @@ query {
     $selector {
         ... on User {
             pullRequests(first: 100, after: $cursor) {
+                totalCount
                 nodes {
                     ... PullRequestFragment
                 }
@@ -290,6 +305,7 @@ query {
     $selector {
         ... on User {
             repositories(first: 100, after: $cursor) {
+                totalCount
                 nodes {
                     ... RepositoryFragment
                 }
@@ -308,6 +324,7 @@ query {
     $selector {
         ... on User {
             repositoriesContributedTo(first: 100, after: $cursor) {
+                totalCount
                 nodes {
                     ... RepositoryFragment
                 }
@@ -326,6 +343,7 @@ query {
     $selector {
         ... on User {
             watching(first: 100, after: $cursor) {
+                totalCount
                 nodes {
                     ... RepositoryFragment
                 }

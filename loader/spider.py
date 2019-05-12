@@ -23,11 +23,11 @@ ERROR_TRACE = '_error_trace'
 
 class Spider:
 
-    def __init__(self, g:GraphTraversal, github:GitHub, relatives_cap):
+    def __init__(self, g:GraphTraversal, github:GitHub, relatives_limit):
         super().__init__()
         self.github = github
         self.g = g
-        self.relatives_cap = relatives_cap
+        self.relatives_limit = relatives_limit
 
     def _get_or_create_node(self, label:str, uri:str):
         return self.g.V().has(URI, uri).hasLabel(label).fold().coalesce(
@@ -82,7 +82,7 @@ class Spider:
 
     def _process_relatives(self, parent_id, relatives, label, edge_label, reverse_edge=False):
         fs = []
-        for relative in islice(relatives, self.relatives_cap):
+        for relative in relatives:
             if 'node' in relative:
                 edge_props = relative
                 relative = relative.pop('node')
@@ -108,36 +108,53 @@ class Spider:
         # TODO add nested fields
         # TODO bulk/async?
         # TODO rename?
-        # self._process_relatives(node_id, islice(self.github.get_repository_forks(uri), 3), 'repository', 'fork')
-        self._process_relatives(node_id, self.github.get_repository_assignable_users(uri), 'user', 'assignable')
+
+        # self._process_relatives(node_id, self.github.get_repository_forks(uri, self.relatives_limit),
+        #                         'repository', 'fork')
+        self._process_relatives(node_id, self.github.get_repository_assignable_users(uri, self.relatives_limit),
+                                'user', 'assignable')
         # Must have access for collaborators...
-        # self._process_relatives(node_id, self.github.get_repository_collaborators(uri), 'user', 'collaborator')
+        # self._process_relatives(node_id, self.github.get_repository_collaborators(uri, self.relatives_limit),
+        #                         'user', 'collaborator')
         # TODO why are stargazers only in repo?
-        self._process_relatives(node_id, self.github.get_repository_stargazers(uri), 'user', 'stargazer')
+        self._process_relatives(node_id, self.github.get_repository_stargazers(uri, self.relatives_limit),
+                                'user', 'stargazer')
 
-        self._process_relatives(node_id, self.github.get_repository_commit_comments(uri), 'commit-comment', 'contains')
-        self._process_relatives(node_id, self.github.get_repository_releases(uri), 'release', 'contains')
-        self._process_relatives(node_id, self.github.get_repository_issues(uri), 'issue', 'contains')
-        self._process_relatives(node_id, self.github.get_repository_milestones(uri), 'milestone', 'contains')
-        # TODO these often cause 502
-        # self._process_relatives(node_id, self.github.get_repository_pull_requests(uri), 'pull', 'contains')
+        self._process_relatives(node_id, self.github.get_repository_commit_comments(uri, self.relatives_limit),
+                                'commit-comment', 'contains')
+        self._process_relatives(node_id, self.github.get_repository_releases(uri, self.relatives_limit),
+                                'release', 'contains')
+        self._process_relatives(node_id, self.github.get_repository_issues(uri, self.relatives_limit),
+                                'issue', 'contains')
+        self._process_relatives(node_id, self.github.get_repository_milestones(uri, self.relatives_limit),
+                                'milestone', 'contains')
+        # TODO these often causes 502
+        # self._process_relatives(node_id, self.github.get_repository_pull_requests(uri, self.relatives_limit), 'pull', 'contains')
 
-        self._process_relatives(node_id, self.github.get_repository_languages(uri), 'language', 'uses')
+        self._process_relatives(node_id, self.github.get_repository_languages(uri, self.relatives_limit), 'language', 'uses')
 
         self._mark_processed(node_id)
 
     def _process_user(self, uri:str):
         node_id = self._get_node_id(uri)
 
-        self._process_relatives(node_id, self.github.get_user_followers(uri), 'user', 'follows', reverse_edge=True)
-        self._process_relatives(node_id, self.github.get_user_following(uri), 'user', 'follows')
-        self._process_relatives(node_id, self.github.get_user_commit_comments(uri), 'commit-comment', 'wrote')
-        self._process_relatives(node_id, self.github.get_user_issues(uri), 'issue', 'wrote')
-        # TODO these often cause 502
-        # self._process_relatives(node_id, self.github.get_user_pull_requests(uri), 'pull', 'created')
-        self._process_relatives(node_id, self.github.get_user_repositories(uri), 'repository', 'created')
-        self._process_relatives(node_id, self.github.get_user_repositories_contributed_to(uri), 'repository', 'contributed-to')
-        self._process_relatives(node_id, self.github.get_user_watching(uri), 'repository', 'watches')
+        self._process_relatives(node_id, self.github.get_user_followers(uri, self.relatives_limit),
+                                'user', 'follows', reverse_edge=True)
+        self._process_relatives(node_id, self.github.get_user_following(uri, self.relatives_limit),
+                                'user', 'follows')
+        self._process_relatives(node_id, self.github.get_user_commit_comments(uri, self.relatives_limit),
+                                'commit-comment', 'wrote')
+        self._process_relatives(node_id, self.github.get_user_issues(uri, self.relatives_limit),
+                                'issue', 'wrote')
+        # TODO these often causes 502
+        # self._process_relatives(node_id, self.github.get_user_pull_requests(uri, self.relatives_limit),
+        #                         'pull', 'created')
+        self._process_relatives(node_id, self.github.get_user_repositories(uri, self.relatives_limit),
+                                'repository', 'created')
+        self._process_relatives(node_id, self.github.get_user_repositories_contributed_to(uri, self.relatives_limit),
+                                'repository', 'contributed-to')
+        self._process_relatives(node_id, self.github.get_user_watching(uri, self.relatives_limit),
+                                'repository', 'watches')
 
         self._mark_processed(node_id)
 
