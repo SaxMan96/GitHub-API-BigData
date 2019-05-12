@@ -3,7 +3,9 @@
 import time
 import logging
 import traceback
+
 from itertools import islice
+from concurrent import futures
 
 from tqdm import tqdm
 from gremlin_python.process.graph_traversal import GraphTraversal, __
@@ -33,10 +35,16 @@ class Spider:
             __.addV(label).property(URI, uri)
         )
 
-    def _get_or_create_edge(self, label:str, start:int, end:int):
-        return self.g.V(start).outE(label).filter(__.inV().hasId(end)).fold().coalesce(
-            __.unfold(),
-            self.g.V(start).addE(label).to(self.g.V(end))
+    def _get_or_created_edge_from(self, node: GraphTraversal, other: int, label: str):
+        return node.coalesce(
+            __.inE(label).filter(__.outV().hasId(other)),
+            __.addE(label).from_(self.g.V(other))
+        )
+
+    def _get_or_created_edge_to(self, node: GraphTraversal, other: int, label: str):
+        return node.coalesce(
+            __.outE(label).filter(__.inV().hasId(other)),
+            __.addE(label).to(self.g.V(other))
         )
 
     def _get_node_id(self, uri:str):
@@ -47,12 +55,12 @@ class Spider:
             return nodes[0]
         return None
 
-    def _add_properties(self, vertex, properties):
+    def _add_properties(self, element, properties):
         if properties is not None:
             for key, value in properties.items():
                 if value is not None:
-                    vertex = vertex.property(key, value)
-        return vertex
+                    element = element.property(key, value)
+        return element
 
     def _merge_node(self, label:str, properties: dict):
         assert URI not in properties
@@ -60,42 +68,37 @@ class Spider:
 
         uri = properties.pop('id')
 
-        assert self.g.V().has(URI, uri).count().next() <= 1
+        # assert self.g.V().has(URI, uri).count().next() <= 1
         vertex = self._get_or_create_node(label, uri)
 
         vertex.property(TIME_CREATED, time.time())
         vertex.property(TIME_PROCESSED, 0.0)
         vertex = self._add_properties(vertex, properties)
 
-        return vertex.id().next()
-
-    def _has_edge(self, label:str, start:int, end:int):
-        return self.g.V(start).outE(label).filter(__.inV().hasId(end)).hasNext()
-
-    def _add_edge(self, label:str, start:int, end:int, properties=None):
-        edge = self._get_or_create_edge(label, start, end)
-        edge = self._add_properties(edge, properties)
-        return edge.id().next()
+        return vertex
 
     def _mark_processed(self, node_id:int):
         self.g.V(node_id).property(TIME_PROCESSED, time.time()).next()
 
-    def load_repository(self, ghid_or_url):
-        return self._merge_node('repository', self.github.get_repository(ghid_or_url))
-
-    def _process_relatives(self, parent_id, relatives, label, edge, reverse_edge=False):
+    def _process_relatives(self, parent_id, relatives, label, edge_label, reverse_edge=False):
+        fs = []
         for relative in islice(relatives, self.relatives_cap):
             if 'node' in relative:
                 edge_props = relative
                 relative = relative.pop('node')
             else:
                 edge_props = None
-            relative_id = self._merge_node(label, relative)
+
+            relative_node = self._merge_node(label, relative)
 
             if reverse_edge:
-                self._add_edge(edge, relative_id, parent_id, edge_props)
+                edge = self._get_or_created_edge_from(relative_node, parent_id, edge_label)
             else:
-                self._add_edge(edge, parent_id, relative_id, edge_props)
+                edge = self._get_or_created_edge_to(relative_node, parent_id, edge_label)
+
+            fs.append(self._add_properties(edge, edge_props).promise())
+
+        futures.wait(fs)
 
     def _process_repository(self, uri:str):
         node_id = self._get_node_id(uri)
@@ -104,7 +107,7 @@ class Spider:
         # TODO fix broken ones
         # TODO add nested fields
         # TODO bulk/async?
-        # TODO remove pointles labels/rename?
+        # TODO rename?
         # self._process_relatives(node_id, islice(self.github.get_repository_forks(uri), 3), 'repository', 'fork')
         self._process_relatives(node_id, self.github.get_repository_assignable_users(uri), 'user', 'assignable')
         # self._process_relatives(node_id, self.github.get_repository_collaborators(uri), 'user', 'collaborator')
@@ -128,7 +131,6 @@ class Spider:
         self._process_relatives(node_id, self.github.get_user_followers(uri), 'user', 'follows', reverse_edge=True)
         self._process_relatives(node_id, self.github.get_user_following(uri), 'user', 'follows')
         self._process_relatives(node_id, self.github.get_user_commit_comments(uri), 'commit-comment', 'wrote')
-        # TODO decode error
         self._process_relatives(node_id, self.github.get_user_issues(uri), 'issue', 'wrote')
         # self._process_relatives(node_id, self.github.get_user_pull_requests(uri), 'pull', 'created')
         self._process_relatives(node_id, self.github.get_user_repositories(uri), 'repository', 'created')
@@ -141,8 +143,10 @@ class Spider:
         node_id = self._get_node_id(uri)
         self._mark_processed(node_id)
 
+    def load_repository(self, ghid_or_url):
+        return self._merge_node('repository', self.github.get_repository(ghid_or_url)).id().next()
+
     def has_unprocessed(self):
-        # TODO check if this closes query
         return self.g.V().has(TIME_PROCESSED, 0.0).hasNext()
 
     def process(self, quiet=False):
