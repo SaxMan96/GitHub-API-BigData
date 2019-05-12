@@ -4,7 +4,7 @@ import time
 import logging
 import traceback
 
-from itertools import islice
+from itertools import islice, chain
 from concurrent import futures
 
 from tqdm import tqdm
@@ -151,7 +151,7 @@ class Spider:
     def has_unprocessed(self):
         return self.g.V().has(TIME_PROCESSED, 0.0).hasNext()
 
-    def process(self, quiet=False):
+    def process(self, quiet=False, repos_first=True):
         start = time.time()
         nodes_count = self.g.V().has(TIME_PROCESSED, 0.0).has(TIME_CREATED, P.lte(start)).count().next()
 
@@ -169,8 +169,13 @@ class Spider:
             'milestone': self._process_do_nothing,
         }
 
-        # shuffle takes a long time, we process nodes in order instead
-        nodes = self.g.V().has(TIME_PROCESSED, 0.0).has(TIME_CREATED, P.lte(start))
+        if repos_first:
+            repo_nodes = self.g.V().has(TIME_PROCESSED, 0.0).has(TIME_CREATED, P.lte(start)).hasLabel('repository')
+            other_nodes = self.g.V().has(TIME_PROCESSED, 0.0).has(TIME_CREATED, P.lte(start)).not_(__.hasLabel('repository'))
+            nodes = chain(repo_nodes, other_nodes)
+        else:
+            nodes = self.g.V().has(TIME_PROCESSED, 0.0).has(TIME_CREATED, P.lte(start))
+
         for node in tqdm(nodes, total=nodes_count, unit='node', disable=quiet):
             label = self.g.V(node).label().next()
             uri = self.g.V(node).properties(URI).value().next()
