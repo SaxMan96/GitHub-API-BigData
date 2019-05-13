@@ -2,6 +2,12 @@ import pandas as pd
 from gremlin_python.process.graph_traversal import GraphTraversal
 from gremlin_python.process.traversal import P
 
+IS_PRERELEASE = 'isPrerelease'
+IS_DRAFT = 'isDraft'
+RELEASE = 'release'
+
+MILESTONE = "milestone"
+
 STARGAZER_PREFIX = 'stargazer_'
 STARGAZER = 'stargazer'
 COMPANY = 'company'
@@ -19,6 +25,7 @@ TIME_PROCESSED = '_processed'
 USES = 'uses'
 NAME = 'name'
 SIZE = 'size'
+UNDERSCORE = '_'
 
 
 class Stats:
@@ -39,6 +46,7 @@ class Stats:
 
         for i, repo_id in enumerate(repo_ids):
             self._create_repository_row(repo_id)
+            print(f" Repo {i} processed...")
         self._save(filename)
 
     def _create_repository_row(self, repo_id):
@@ -47,11 +55,14 @@ class Stats:
         added = pd.concat([added,
                            self._add_language_features(repo_id),
                            self._add_issue_features(repo_id),
-                           self.add_assignable_features(repo_id),
-                           self.add_stargazer_features(repo_id)],
-                          axis=1)
+                           self._add_assignable_features(repo_id),
+                           self._add_stargazer_features(repo_id),
+                           self._add_milestone_features(repo_id),
+                           self._add_release_features(repo_id)],
+                          axis=1,
+                          sort=False)
 
-        self.df = pd.concat([self.df, added])
+        self.df = pd.concat([self.df, added], sort=False)
 
     def _create_basic_df(self, repo_id):
         properties = self.g.V(repo_id).properties().toList()
@@ -76,7 +87,7 @@ class Stats:
 
         return pd.DataFrame([n_of_unclosed_issues], columns=[UNCLOSED_ISSUES])
 
-    def add_assignable_features(self, repo_id):
+    def _add_assignable_features(self, repo_id):
         number = self.g.V(repo_id).inE().hasLabel(ASSIGNABLE).count().next()
         bio_number = self.g.V(repo_id).inE().hasLabel(ASSIGNABLE).has(BIO).count().next()
         company_number = self.g.V(repo_id).inE().hasLabel(ASSIGNABLE).has(COMPANY).count().next()
@@ -86,13 +97,34 @@ class Stats:
 
         return pd.DataFrame([values], columns=labels)
 
-    def add_stargazer_features(self, repo_id):
+    def _add_stargazer_features(self, repo_id):
         number = self.g.V(repo_id).inE().hasLabel(STARGAZER).count().next()
         bio_number = self.g.V(repo_id).inE().hasLabel(STARGAZER).has(BIO).count().next()
         company_number = self.g.V(repo_id).inE().hasLabel(STARGAZER).has(COMPANY).count().next()
 
         values = [number, bio_number, company_number]
         labels = [STARGAZER_PREFIX, STARGAZER_PREFIX + BIO, STARGAZER_PREFIX + COMPANY]
+
+        return pd.DataFrame([values], columns=labels)
+
+    def _add_milestone_features(self, repo_id):
+        # TODO: add last updatedAt
+        ms_number = self.g.V(repo_id).inE().outV().hasLabel(MILESTONE).count().next()
+        closed_ms = self.g.V(repo_id).inE().outV().hasLabel(MILESTONE).has(CLOSED, True).count().next()
+
+        values = [ms_number, closed_ms]
+        labels = [MILESTONE, MILESTONE + UNDERSCORE + CLOSED]
+
+        return pd.DataFrame([values], columns=labels)
+
+    def _add_release_features(self, repo_id):
+        # TODO: add last updatedAt
+        release_number = self.g.V(repo_id).inE().outV().hasLabel(RELEASE).count().next()
+        draft_number = self.g.V(repo_id).inE().outV().hasLabel(RELEASE).has(IS_DRAFT, True).count().next()
+        prerelease_number = self.g.V(repo_id).inE().outV().hasLabel(RELEASE).has(IS_PRERELEASE, True).count().next()
+
+        values = [release_number, draft_number, prerelease_number]
+        labels = [RELEASE + UNDERSCORE, RELEASE + UNDERSCORE + IS_DRAFT, RELEASE + UNDERSCORE + IS_PRERELEASE]
 
         return pd.DataFrame([values], columns=labels)
 
