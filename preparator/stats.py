@@ -113,9 +113,9 @@ class Stats:
     def _add_milestone_features(self, repo_id):
         # TODO: add last updatedAt
         ms_number = self.g.V(repo_id).inE().outV().hasLabel(MILESTONE).count().next()
-        ms_closed = self.g.V(repo_id).inE().outV().hasLabel(MILESTONE).has(CLOSED, True).count().next()
+        closed_ms = self.g.V(repo_id).inE().outV().hasLabel(MILESTONE).has(CLOSED, True).count().next()
 
-        values = [ms_number, ms_closed]
+        values = [ms_number, closed_ms]
         labels = [MILESTONE, MILESTONE + UNDERSCORE + CLOSED]
 
         return pd.DataFrame([values], columns=labels)
