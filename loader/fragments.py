@@ -8,6 +8,8 @@ fragment RepositoryFragment on Repository {
     createdAt
     diskUsage
     forkCount
+    squashMergeAllowed
+    pushedAt
     isArchived
     isDisabled
     isFork
