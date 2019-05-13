@@ -82,7 +82,7 @@ class Stats:
         if sum(sizes) > 0:
             sizes = [size / sum(sizes) for size in sizes]
         else:
-            sizes = [0 for size in sizes]
+            sizes = [0] * len(sizes)
         return pd.DataFrame([sizes], columns=labels)
 
     def _add_issue_features(self, repo_id):
