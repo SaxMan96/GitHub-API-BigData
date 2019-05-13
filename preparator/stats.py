@@ -79,7 +79,10 @@ class Stats:
         labels = [language[2] for language in languages]
         sizes = [language[1] for language in languages]
 
-        sizes = [size / sum(sizes) for size in sizes]
+        if sum(sizes) > 0:
+            sizes = [size / sum(sizes) for size in sizes]
+        else:
+            sizes = [0 for size in sizes]
         return pd.DataFrame([sizes], columns=labels)
 
     def _add_issue_features(self, repo_id):
@@ -110,9 +113,9 @@ class Stats:
     def _add_milestone_features(self, repo_id):
         # TODO: add last updatedAt
         ms_number = self.g.V(repo_id).inE().outV().hasLabel(MILESTONE).count().next()
-        closed_ms = self.g.V(repo_id).inE().outV().hasLabel(MILESTONE).has(CLOSED, True).count().next()
+        ms_closed = self.g.V(repo_id).inE().outV().hasLabel(MILESTONE).has(CLOSED, True).count().next()
 
-        values = [ms_number, closed_ms]
+        values = [ms_number, ms_closed]
         labels = [MILESTONE, MILESTONE + UNDERSCORE + CLOSED]
 
         return pd.DataFrame([values], columns=labels)
