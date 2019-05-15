@@ -7,6 +7,8 @@ import traceback
 from itertools import islice, chain
 from concurrent import futures
 
+from timeout_decorator import timeout
+
 from tqdm import tqdm
 from gremlin_python.process.graph_traversal import GraphTraversal, __
 from gremlin_python.process.traversal import P, Order
@@ -23,11 +25,12 @@ ERROR_TRACE = '_error_trace'
 
 class Spider:
 
-    def __init__(self, g:GraphTraversal, github:GitHub, relatives_limit):
+    def __init__(self, g:GraphTraversal, github:GitHub, relatives_limit, max_property_size):
         super().__init__()
         self.github = github
         self.g = g
         self.relatives_limit = relatives_limit
+        self.max_property_size = max_property_size
 
     def _get_or_create_node(self, label:str, uri:str):
         return self.g.V().has(URI, uri).hasLabel(label).fold().coalesce(
@@ -58,6 +61,8 @@ class Spider:
     def _add_properties(self, element, properties):
         if properties is not None:
             for key, value in properties.items():
+                if hasattr(value, '__len__') and len(value) > self.max_property_size:
+                    raise ValueError('Property exceded length limit.')
                 if value is not None:
                     element = element.property(key, value)
         return element
@@ -80,6 +85,7 @@ class Spider:
     def _mark_processed(self, node_id:int):
         self.g.V(node_id).property(TIME_PROCESSED, time.time()).next()
 
+    @timeout(120)
     def _process_relatives(self, parent_id, relatives, label, edge_label, reverse_edge=False):
         fs = []
         for relative in relatives:
@@ -187,8 +193,8 @@ class Spider:
         }
 
         if repos_first:
-            repo_nodes = self.g.V().has(TIME_PROCESSED, 0.0).has(TIME_CREATED, P.lte(start)).hasLabel('repository')
-            other_nodes = self.g.V().has(TIME_PROCESSED, 0.0).has(TIME_CREATED, P.lte(start)).not_(__.hasLabel('repository'))
+            repo_nodes = self.g.V().has(TIME_PROCESSED, 0.0).has(TIME_CREATED, P.lte(start)).hasLabel('repository').hasNot('_error')
+            other_nodes = self.g.V().has(TIME_PROCESSED, 0.0).has(TIME_CREATED, P.lte(start)).not_(__.hasLabel('repository')).hasNot('_error')
             nodes = chain(repo_nodes, other_nodes)
         else:
             nodes = self.g.V().has(TIME_PROCESSED, 0.0).has(TIME_CREATED, P.lte(start))
