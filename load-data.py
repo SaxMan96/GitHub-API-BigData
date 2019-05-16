@@ -36,13 +36,15 @@ def main(args):
 
     # TODO signals + errors
     while spider.has_unprocessed():
-        spider.process()
+        spider.process(args.quiet, not args.fifo, args.skip_errors)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--db-url', type=str, default=DB_URL)
     parser.add_argument('--quiet', action='store_true')
+    parser.add_argument('--skip-errors', action='store_true')
+    parser.add_argument('--fifo', action='store_true')
     parser.add_argument('--relatives-cap', type=int, default=10000)
     parser.add_argument('--max-property-size', type=int, default=65534)
     parser.add_argument('token', type=str, help="See https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line.")

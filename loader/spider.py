@@ -85,7 +85,7 @@ class Spider:
     def _mark_processed(self, node_id:int):
         self.g.V(node_id).property(TIME_PROCESSED, time.time()).next()
 
-    @timeout(120)
+    @timeout(600)
     def _process_relatives(self, parent_id, relatives, label, edge_label, reverse_edge=False):
         fs = []
         for relative in relatives:
@@ -174,7 +174,7 @@ class Spider:
     def has_unprocessed(self):
         return self.g.V().has(TIME_PROCESSED, 0.0).hasNext()
 
-    def process(self, quiet=False, repos_first=True):
+    def process(self, quiet=False, repos_first=True, skip_errors=True):
         start = time.time()
         nodes_count = self.g.V().has(TIME_PROCESSED, 0.0).has(TIME_CREATED, P.lte(start)).count().next()
 
@@ -193,11 +193,16 @@ class Spider:
         }
 
         if repos_first:
-            repo_nodes = self.g.V().has(TIME_PROCESSED, 0.0).has(TIME_CREATED, P.lte(start)).hasLabel('repository').hasNot('_error')
-            other_nodes = self.g.V().has(TIME_PROCESSED, 0.0).has(TIME_CREATED, P.lte(start)).not_(__.hasLabel('repository')).hasNot('_error')
+            repo_nodes = self.g.V().has(TIME_PROCESSED, 0.0).has(TIME_CREATED, P.lte(start)).hasLabel('repository')
+            other_nodes = self.g.V().has(TIME_PROCESSED, 0.0).has(TIME_CREATED, P.lte(start)).not_(__.hasLabel('repository'))
+            if skip_errors:
+                repo_nodes = repo_nodes.hasNot('_error')
+                other_nodes = other_nodes.hasNot('_error')
             nodes = chain(repo_nodes, other_nodes)
         else:
             nodes = self.g.V().has(TIME_PROCESSED, 0.0).has(TIME_CREATED, P.lte(start))
+            if skip_errors:
+                nodes = nodes.hasNot('_error')
 
         for node in tqdm(nodes, total=nodes_count, unit='node', disable=quiet):
             label = self.g.V(node).label().next()
