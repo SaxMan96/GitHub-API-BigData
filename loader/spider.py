@@ -171,7 +171,7 @@ class Spider:
     def has_unprocessed(self):
         return self.g.V().has(TIME_PROCESSED, 0.0).hasNext()
 
-    def process(self, change_limit, quiet=False, repos_first=True, skip_errors=True, token_checking_number=30):
+    def process(self, change_limit, quiet=False, repos_first=True, skip_errors=True, token_checking_number=10):
         start = time.time()
         nodes_count = self.g.V().has(TIME_PROCESSED, 0.0).has(TIME_CREATED, P.lte(start)).count().next()
 
@@ -206,7 +206,7 @@ class Spider:
             uri = self.g.V(node).properties(URI).value().next()
 
             if n % token_checking_number == 0:
-                self.github = self.github.adjust_token(self.tokens, change_limit=change_limit)
+                self.github.adjust_token(self.tokens, quiet, change_limit=change_limit)
 
             try:
                 processors[label](uri)

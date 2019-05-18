@@ -116,10 +116,15 @@ class GitHub:
         }
         """).json()['data']['rateLimit']
 
-    def adjust_token(self, tokens, change_limit):
-        if len(tokens) > 1 and self.get_rate_limit()['remaining'] < change_limit:
-            self.token_number = self.token_number + 1
-            self._change_token(tokens[self.token_number % len(tokens)])
+    def adjust_token(self, tokens, quiet, change_limit):
+        if len(tokens) > 1:
+            rate = self.get_rate_limit()
+            if rate['remaining'] < change_limit:
+                self.token_number = self.token_number + 1
+                self._change_token(tokens[self.token_number % len(tokens)])
+                if not quiet:
+                    logging.info('Token change with {} points remaining. resetAt {}'.format(rate['remaining'], rate['resetAt']))
+
 
     def _change_token(self, token, endpoint=None):
         self.connection = Connection(token, endpoint)

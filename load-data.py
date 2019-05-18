@@ -49,6 +49,6 @@ if __name__ == '__main__':
     parser.add_argument('--relatives-cap', type=int, default=10000)
     parser.add_argument('--max-property-size', type=int, default=65534)
     parser.add_argument('--token-change-limit', type=int, default=400)
-    parser.add_argument('--tokens', type=list, nargs='+',
+    parser.add_argument('--tokens', nargs='+',type=str,
                         help="See https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line.")
     main(parser.parse_args())
