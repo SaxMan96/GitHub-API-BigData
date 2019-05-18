@@ -13,6 +13,7 @@ from loader.spider import Spider
 
 
 DB_URL = 'ws://localhost:8182/gremlin'
+# gremlinpython==3.2.11
 
 
 def main(args):
@@ -25,7 +26,7 @@ def main(args):
     g = graph.traversal().withRemote(DriverRemoteConnection(DB_URL,'g'))
 
     github = GitHub(args.token)
-    spider = Spider(g, github, args.relatives_cap)
+    spider = Spider(g, github, args.relatives_cap, args.max_property_size)
 
     print(github.get_rate_limit())
 
@@ -35,13 +36,16 @@ def main(args):
 
     # TODO signals + errors
     while spider.has_unprocessed():
-        spider.process()
+        spider.process(args.quiet, not args.fifo, args.skip_errors)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--db-url', type=str, default=DB_URL)
     parser.add_argument('--quiet', action='store_true')
-    parser.add_argument('--relatives-cap', type=int, default=300)
+    parser.add_argument('--skip-errors', action='store_true')
+    parser.add_argument('--fifo', action='store_true')
+    parser.add_argument('--relatives-cap', type=int, default=10000)
+    parser.add_argument('--max-property-size', type=int, default=65534)
     parser.add_argument('token', type=str, help="See https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line.")
     main(parser.parse_args())
