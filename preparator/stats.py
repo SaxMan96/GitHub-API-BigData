@@ -4,6 +4,7 @@ from subprocess import Popen, PIPE
 import pandas as pd
 from gremlin_python.process.graph_traversal import GraphTraversal
 from gremlin_python.process.traversal import P
+from tqdm import tqdm
 
 # hadoop
 HADOOP = "hadoop"
@@ -52,14 +53,13 @@ class Stats:
 
         return pd.DataFrame(columns=self.g.V(repo_id).properties().label().toList())
 
-    def create_train_set(self, filename, username):
+    def create_train_set(self, filename, username, quiet=False):
         repo_ids = self.g.V().has(TIME_PROCESSED, P.gt(0.0)).hasLabel(REPOSITORY).id().toList()
 
         print(f"{len(repo_ids)} ids downloaded...")
 
-        for i, repo_id in enumerate(repo_ids[:10]):
+        for repo_id in tqdm(repo_ids, total=len(repo_ids), unit='repository', disable=quiet):
             self._create_repository_row(repo_id)
-            print(f" Repo {i} processed...")
         self._save(filename, username)
 
     def _create_repository_row(self, repo_id):
