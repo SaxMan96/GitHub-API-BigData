@@ -1,16 +1,14 @@
 """GitHub API connector"""
 
-import re
 import logging
-import requests
-
+import re
 from pprint import pformat
 from string import Template
 
 import backoff
+import requests
 
 from loader import queries
-
 
 DEFAULT_ENDPOINT = 'https://api.github.com/graphql'
 
@@ -29,6 +27,7 @@ class Connection:
         super().__init__()
         self.endpoint = endpoint or DEFAULT_ENDPOINT
         self.token = token
+
 
     @backoff.on_exception(backoff.fibo, requests.exceptions.HTTPError, max_tries=5, on_backoff=_on_backoff)
     def query(self, query, ignore_error=False):
@@ -57,6 +56,7 @@ class GitHub:
     def __init__(self, token, endpoint=None):
         super().__init__()
         self.connection = Connection(token, endpoint)
+        self.token_number = 0
 
     def _get(self, id_or_url, query):
         response = self.connection.query(query).json()
@@ -115,6 +115,14 @@ class GitHub:
             }
         }
         """).json()['data']['rateLimit']
+
+    def adjust_token(self, tokens, change_limit):
+        if len(tokens) > 1 and self.get_rate_limit()['remaining'] < change_limit:
+            self.token_number = self.token_number + 1
+            self._change_token(tokens[self.token_number % len(tokens)])
+
+    def _change_token(self, token, endpoint=None):
+        self.connection = Connection(token, endpoint)
 
     def get_repository(self, id_or_url):
         return self._get(id_or_url, Template(queries.REPOSITORY).substitute(selector=_selector(id_or_url)))
