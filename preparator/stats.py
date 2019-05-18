@@ -1,15 +1,19 @@
+import os
+from subprocess import Popen, PIPE
+
 import pandas as pd
 from gremlin_python.process.graph_traversal import GraphTraversal
 from gremlin_python.process.traversal import P
 
+# hadoop
+HADOOP = "hadoop"
+USER = "user"
+
+# gremlin
 WATCHES = 'watches'
-
 WROTE = 'wrote'
-
 FOLLOWS = 'follows'
-
 CREATED = 'created'
-
 CONTRIBUTED_TO = 'contributed-to'
 
 IS_PRERELEASE = 'isPrerelease'
@@ -17,7 +21,6 @@ IS_DRAFT = 'isDraft'
 RELEASE = 'release'
 
 MILESTONE = "milestone"
-
 STARGAZER_PREFIX = 'stargazer_'
 STARGAZER = 'stargazer'
 COMPANY = 'company'
@@ -49,7 +52,7 @@ class Stats:
 
         return pd.DataFrame(columns=self.g.V(repo_id).properties().label().toList())
 
-    def create_train_set(self, filename):
+    def create_train_set(self, filename, username):
         repo_ids = self.g.V().has(TIME_PROCESSED, P.gt(0.0)).hasLabel(REPOSITORY).id().toList()
 
         print(f"{len(repo_ids)} ids downloaded...")
@@ -57,7 +60,7 @@ class Stats:
         for i, repo_id in enumerate(repo_ids[:10]):
             self._create_repository_row(repo_id)
             print(f" Repo {i} processed...")
-        self._save(filename)
+        self._save(filename, username)
 
     def _create_repository_row(self, repo_id):
         added = self._create_basic_df(repo_id)
@@ -94,6 +97,7 @@ class Stats:
             sizes = [size / sum(sizes) for size in sizes]
         else:
             sizes = [0] * len(sizes)
+
         return pd.DataFrame([sizes], columns=labels)
 
     def _add_issue_features(self, repo_id):
@@ -122,7 +126,6 @@ class Stats:
         return pd.DataFrame([values], columns=labels)
 
     def _add_milestone_features(self, repo_id):
-        # TODO: add last updatedAt
         ms_number = self.g.V(repo_id).inE().outV().hasLabel(MILESTONE).count().next()
         closed_ms = self.g.V(repo_id).inE().outV().hasLabel(MILESTONE).has(CLOSED, True).count().next()
 
@@ -132,7 +135,6 @@ class Stats:
         return pd.DataFrame([values], columns=labels)
 
     def _add_release_features(self, repo_id):
-        # TODO: add last updatedAt
         release_number = self.g.V(repo_id).inE().outV().hasLabel(RELEASE).count().next()
         draft_number = self.g.V(repo_id).inE().outV().hasLabel(RELEASE).has(IS_DRAFT, True).count().next()
         prerelease_number = self.g.V(repo_id).inE().outV().hasLabel(RELEASE).has(IS_PRERELEASE, True).count().next()
@@ -141,9 +143,6 @@ class Stats:
         labels = [RELEASE + UNDERSCORE, RELEASE + UNDERSCORE + IS_DRAFT, RELEASE + UNDERSCORE + IS_PRERELEASE]
 
         return pd.DataFrame([values], columns=labels)
-
-    def _save(self, filename):
-        self.df.to_csv(filename)
 
     def _add_contributors_features(self, repo_id):
 
@@ -165,3 +164,9 @@ class Stats:
                   CONTRIBUTED_TO + UNDERSCORE + WATCHES]
 
         return pd.DataFrame([values], columns=labels)
+
+    def _save(self, filename, username):
+        self.df.to_csv(filename)
+        hdfs_path = os.path.join(os.sep, USER, username, filename)
+        put = Popen([HADOOP, "fs", "-put", filename, hdfs_path], stdin=PIPE, bufsize=-1)
+        put.communicate()
