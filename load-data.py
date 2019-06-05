@@ -35,7 +35,6 @@ def main(args):
 
     print('Loaded seeds.')
 
-    # TODO signals + errors
     while spider.has_unprocessed():
         spider.process(args.token_change_limit, args.quiet, not args.fifo, args.skip_errors)
 
