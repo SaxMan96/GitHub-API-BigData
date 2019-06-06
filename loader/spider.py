@@ -106,12 +106,6 @@ class Spider:
     def _process_repository(self, uri:str):
         node_id = self._get_node_id(uri)
 
-        # TODO get ancestors (OG fork)
-        # TODO fix broken ones
-        # TODO add nested fields
-        # TODO bulk/async?
-        # TODO rename?
-
         # self._process_relatives(node_id, self.github.get_repository_forks(uri, self.relatives_limit),
         #                         'repository', 'fork')
         self._process_relatives(node_id, self.github.get_repository_assignable_users(uri, self.relatives_limit),
@@ -119,7 +113,6 @@ class Spider:
         # Must have access for collaborators...
         # self._process_relatives(node_id, self.github.get_repository_collaborators(uri, self.relatives_limit),
         #                         'user', 'collaborator')
-        # TODO why are stargazers only in repo?
         self._process_relatives(node_id, self.github.get_repository_stargazers(uri, self.relatives_limit),
                                 'user', 'stargazer')
 
